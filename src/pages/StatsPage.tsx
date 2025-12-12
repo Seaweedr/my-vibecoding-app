@@ -4,6 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAx
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Download, FileText, ArrowLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
+import { convertCurrency } from '../lib/currency';
 
 const COLORS = ['#5C9DF2', '#FF9F76', '#10B981', '#F59E0B', '#8B5CF6', '#6B7280'];
 
@@ -166,9 +167,10 @@ export function StatsPage() {
                             <div className="grid gap-4">
                                 {trips.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()).map(trip => {
                                     // Calculate simple total for preview
+                                    // Calculate total in TWD (Home Currency)
                                     const tripTotal = expenses
                                         .filter(e => e.tripId === trip.id)
-                                        .reduce((acc, curr) => acc + curr.amount, 0);
+                                        .reduce((acc, curr) => acc + convertCurrency(curr.amount, curr.currency, 'TWD'), 0);
 
                                     return (
                                         <Link

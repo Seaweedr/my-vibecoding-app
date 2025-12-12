@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useStorage } from '../context/StorageContext';
-import type { ExpenseCategory, CurrencyCode } from '../types';
+import type { ExpenseCategory, CurrencyCode, ExpenseItem } from '../types';
 import { ArrowLeft, Check, Coffee, Bus, Bed, ShoppingBag, Music, MoreHorizontal, Plus, X, Clock, Camera, ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 
 const CATEGORIES: { id: ExpenseCategory; label: string; icon: any }[] = [
     { id: 'food', label: '餐飲', icon: Coffee },
@@ -34,8 +34,24 @@ export function AddExpensePage() {
     const [amount, setAmount] = useState(existingExpense ? String(existingExpense.amount) : '');
     const [merchant, setMerchant] = useState(existingExpense ? existingExpense.merchant : '');
     const [category, setCategory] = useState<ExpenseCategory>(existingExpense ? existingExpense.category : 'food');
-    const [date, setDate] = useState(existingExpense ? format(new Date(existingExpense.date), 'yyyy-MM-dd HH:mm') : format(new Date(), 'yyyy-MM-dd HH:mm'));
+
+    // FIX: Ensure valid date initialization
+    const getInitialDate = () => {
+        try {
+            if (existingExpense) {
+                return format(new Date(existingExpense.date), "yyyy-MM-dd'T'HH:mm");
+            }
+            return format(new Date(), "yyyy-MM-dd'T'HH:mm");
+        } catch (e) {
+            console.error("Date init error", e);
+            return format(new Date(), "yyyy-MM-dd'T'HH:mm");
+        }
+    };
+
+    const [date, setDate] = useState(getInitialDate());
     const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(existingExpense ? existingExpense.currency : (trip?.currency || 'TWD'));
+
+    const dateInputRef = useRef<HTMLInputElement>(null);
 
     // Split Logic
     const companions = useStorage().getTripCompanions(trip?.id || '');
@@ -47,6 +63,37 @@ export function AddExpensePage() {
     const [showSplit, setShowSplit] = useState(involvedCompanionIds.length > 1);
 
     const [images, setImages] = useState<string[]>(existingExpense ? (existingExpense.images || []) : []);
+    const [items, setItems] = useState<ExpenseItem[]>(existingExpense?.items || []);
+
+    // Auto-sum effect for items
+    useEffect(() => {
+        if (items.length > 0) {
+            const total = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            setAmount(total.toString());
+        }
+    }, [items]);
+
+    const handleAddItem = () => {
+        const newItem: ExpenseItem = {
+            id: crypto.randomUUID(),
+            name: '',
+            amount: 0
+        };
+        setItems([...items, newItem]);
+    };
+
+    const handleUpdateItem = (id: string, field: keyof ExpenseItem, value: any) => {
+        setItems(prev => prev.map(item => {
+            if (item.id === id) {
+                return { ...item, [field]: value };
+            }
+            return item;
+        }));
+    };
+
+    const handleRemoveItem = (id: string) => {
+        setItems(prev => prev.filter(i => i.id !== id));
+    };
 
     const toggleCompanion = (id: string) => {
         setInvolvedCompanionIds(prev => {
@@ -74,12 +121,19 @@ export function AddExpensePage() {
     // Simulate OCR pre-fill
     useEffect(() => {
         if (mode === 'scan' && !isEditMode) {
-            // Simulate a delay then fill
+            // Simulate a delay then fill with multi-item data
             const timer = setTimeout(() => {
-                setAmount('1250');
-                setMerchant('Delicious Ramen');
+                const scannedItems: ExpenseItem[] = [
+                    { id: crypto.randomUUID(), name: '豚骨拉麵', amount: 980 },
+                    { id: crypto.randomUUID(), name: '半熟蛋', amount: 120 },
+                    { id: crypto.randomUUID(), name: '冰烏龍茶', amount: 150 },
+                ];
+
+                setItems(scannedItems);
+                setMerchant('一蘭拉麵');
                 setCategory('food');
-            }, 500);
+                // Note: setAmount is not needed as it's handled by the autocalc effect
+            }, 800);
             return () => clearTimeout(timer);
         }
     }, [mode, isEditMode]);
@@ -107,6 +161,7 @@ export function AddExpensePage() {
             paidBy: 'user',
             splits,
             images,
+            items: items.length > 0 ? items : undefined,
         };
 
         if (isEditMode && existingExpense) {
@@ -130,6 +185,23 @@ export function AddExpensePage() {
         const current = parseFloat(amount) || 0;
         setAmount(Math.max(0, current + delta).toString());
     };
+
+    // Safe date display helper
+    const getDateDisplay = (dateString: string) => {
+        const d = new Date(dateString);
+        if (!isValid(d)) return {
+            date: 'Invalid Date',
+            time: '--:--',
+            day: '-'
+        };
+        return {
+            date: format(d, 'yyyy年MM月dd日'),
+            time: format(d, 'HH:mm'),
+            day: format(d, 'EEEE')
+        };
+    };
+
+    const dateDisplay = getDateDisplay(date);
 
     return (
         <div className="min-h-screen bg-gray-50 pb-safe">
@@ -263,9 +335,9 @@ export function AddExpensePage() {
                 </div>
 
                 {/* Details - Styled to feel like App UI */}
-                < div className="bg-white rounded-2xl p-4 space-y-4 shadow-sm border border-gray-100" >
+                <div className="bg-white rounded-2xl p-4 space-y-4 shadow-sm border border-gray-100">
                     {/* Merchant Input - Clean line */}
-                    < div className="flex flex-col gap-1" >
+                    <div className="flex flex-col gap-1">
                         <label className="text-xs font-bold text-text-secondary ml-1">商家</label>
                         <input
                             type="text"
@@ -274,12 +346,71 @@ export function AddExpensePage() {
                             value={merchant}
                             onChange={e => setMerchant(e.target.value)}
                         />
-                    </div >
+                    </div>
+
+                    {/* Items List (New Feature) */}
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-text-secondary ml-1">消費明細 (選填)</label>
+                            <button
+                                type="button"
+                                onClick={handleAddItem}
+                                className="text-primary text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-primary/10 transition-colors"
+                            >
+                                <Plus size={14} />
+                                新增商品
+                            </button>
+                        </div>
+
+                        {items.length > 0 && (
+                            <div className="space-y-2 p-2 bg-gray-50 rounded-xl">
+                                {items.map((item, index) => (
+                                    <div key={item.id} className="flex gap-2 items-center animate-fade-in">
+                                        <input
+                                            type="text"
+                                            placeholder="商品名稱"
+                                            className="flex-1 min-w-0 bg-white p-2 rounded-lg text-sm font-medium border border-gray-100 focus:border-primary/50 outline-none transition-all placeholder:text-gray-300"
+                                            value={item.name}
+                                            onChange={(e) => handleUpdateItem(item.id, 'name', e.target.value)}
+                                            autoFocus={index === items.length - 1 && item.name === ''}
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="0"
+                                            className="w-20 bg-white p-2 rounded-lg text-sm font-medium text-right border border-gray-100 focus:border-primary/50 outline-none transition-all placeholder:text-gray-300"
+                                            value={item.amount || ''}
+                                            onChange={(e) => handleUpdateItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
+                                            onFocus={(e) => e.target.select()}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveItem(item.id)}
+                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                ))}
+                                <div className="flex justify-between px-2 pt-1 text-xs text-text-secondary">
+                                    <span>總計</span>
+                                    <span className="font-bold">
+                                        {new Intl.NumberFormat('en-US', { style: 'decimal', minimumFractionDigits: 0 }).format(items.reduce((acc, i) => acc + (Number(i.amount) || 0), 0))}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Date Picker - Custom UI Trigger */}
-                    < div className="flex flex-col gap-1" >
+                    <div className="flex flex-col gap-1">
                         <label className="text-xs font-bold text-text-secondary ml-1">日期與時間</label>
-                        <div className="date-input-wrapper bg-gray-50 rounded-xl p-3 relative group active:bg-gray-100 transition-colors">
+                        <div
+                            className="date-input-wrapper bg-gray-50 rounded-xl p-3 relative group active:bg-gray-100 transition-colors cursor-pointer"
+                            onClick={() => {
+                                // Add safety check for showPicker
+                                dateInputRef.current?.showPicker?.();
+                            }}
+                        >
                             {/* Visual Facade */}
                             <div className="flex items-center gap-3 w-full">
                                 <div className="p-2 bg-white rounded-full text-primary shadow-sm">
@@ -287,10 +418,10 @@ export function AddExpensePage() {
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-bold text-text">
-                                        {format(new Date(date), 'yyyy年MM月dd日')}
+                                        {dateDisplay.date}
                                     </span>
                                     <span className="text-xs text-text-secondary font-medium">
-                                        {format(new Date(date), 'HH:mm')} • {format(new Date(date), 'EEEE')}
+                                        {dateDisplay.time} • {dateDisplay.day}
                                     </span>
                                 </div>
                                 <div className="ml-auto text-gray-300">
@@ -298,17 +429,19 @@ export function AddExpensePage() {
                                 </div>
                             </div>
 
-                            {/* Actual Input (Hidden) */}
+                            {/* Actual Input (Hidden but API accessible) */}
                             <input
+                                ref={dateInputRef}
                                 type="datetime-local"
                                 value={date}
                                 onChange={e => setDate(e.target.value)}
+                                className="absolute inset-0 w-full h-full opacity-0 z-20 pointer-events-none"
                             />
                         </div>
-                    </div >
+                    </div>
 
                     {/* Split Section */}
-                    < div className="pt-2" >
+                    <div className="pt-2">
                         <button
                             type="button"
                             onClick={() => setShowSplit(!showSplit)}
@@ -318,48 +451,46 @@ export function AddExpensePage() {
                             <span className="text-primary text-sm font-medium">{involvedCompanionIds.length > 0 ? `${involvedCompanionIds.length} 人` : '僅自己'}</span>
                         </button>
 
-                        {
-                            showSplit && (
-                                <div className="mt-3 space-y-3 animate-slide-down">
-                                    <div className="flex gap-2 flex-wrap">
+                        {showSplit && (
+                            <div className="mt-3 space-y-3 animate-slide-down">
+                                <div className="flex gap-2 flex-wrap">
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleCompanion('user')}
+                                        className={cn(
+                                            "px-4 py-2 rounded-full text-sm font-medium transition-colors border",
+                                            involvedCompanionIds.includes('user')
+                                                ? "bg-primary text-white border-primary"
+                                                : "bg-gray-50 text-text-secondary border-transparent"
+                                        )}
+                                    >
+                                        我
+                                    </button>
+                                    {companions.map(c => (
                                         <button
+                                            key={c.id}
                                             type="button"
-                                            onClick={() => toggleCompanion('user')}
+                                            onClick={() => toggleCompanion(c.id)}
                                             className={cn(
                                                 "px-4 py-2 rounded-full text-sm font-medium transition-colors border",
-                                                involvedCompanionIds.includes('user')
+                                                involvedCompanionIds.includes(c.id)
                                                     ? "bg-primary text-white border-primary"
                                                     : "bg-gray-50 text-text-secondary border-transparent"
                                             )}
                                         >
-                                            我
+                                            {c.name}
                                         </button>
-                                        {companions.map(c => (
-                                            <button
-                                                key={c.id}
-                                                type="button"
-                                                onClick={() => toggleCompanion(c.id)}
-                                                className={cn(
-                                                    "px-4 py-2 rounded-full text-sm font-medium transition-colors border",
-                                                    involvedCompanionIds.includes(c.id)
-                                                        ? "bg-primary text-white border-primary"
-                                                        : "bg-gray-50 text-text-secondary border-transparent"
-                                                )}
-                                            >
-                                                {c.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <p className="text-xs text-text-secondary">
-                                        目前為平均分攤。每人應付 <span className="font-bold">{
-                                            amount ? new Intl.NumberFormat('en-US', { style: 'currency', currency: selectedCurrency }).format(Number(amount) / (involvedCompanionIds.length || 1)) : '-'
-                                        }</span>
-                                    </p>
+                                    ))}
                                 </div>
-                            )
-                        }
-                    </div >
-                </div >
+                                <p className="text-xs text-text-secondary">
+                                    目前為平均分攤。每人應付 <span className="font-bold">{
+                                        amount ? new Intl.NumberFormat('en-US', { style: 'currency', currency: selectedCurrency }).format(Number(amount) / (involvedCompanionIds.length || 1)) : '-'
+                                    }</span>
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
 
                 <button
                     type="submit"
@@ -368,7 +499,7 @@ export function AddExpensePage() {
                     <Check size={20} />
                     {isEditMode ? '儲存變更' : '儲存消費'}
                 </button>
-            </form >
-        </div >
+            </form>
+        </div>
     );
 }

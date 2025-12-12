@@ -320,6 +320,7 @@ export function TripDetailPage() {
                                                                     <div className="text-[10px] text-text-secondary flex items-center gap-1 font-medium mt-0.5">
                                                                         {format(new Date(expense.date), 'HH:mm')}
                                                                         {expense.category && ` · ${expense.category}`}
+                                                                        {expense.items && expense.items.length > 0 && ` · ${expense.items.length} 項商品`}
                                                                     </div>
                                                                 </div>
                                                                 <div className="flex items-center gap-3">

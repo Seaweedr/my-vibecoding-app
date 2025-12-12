@@ -36,7 +36,7 @@ export function CapturePage() {
                     <X size={24} />
                 </button>
                 <div className="px-3 py-1 bg-black/20 backdrop-blur-md rounded-full text-xs font-medium">
-                    AI Scan Active
+                    正在辨識商品明細...
                 </div>
                 <button className="p-2 rounded-full bg-black/20 backdrop-blur-md">
                     <Zap size={24} />

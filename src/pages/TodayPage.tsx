@@ -3,29 +3,33 @@ import { useStorage } from '../context/StorageContext';
 import { Camera, Plus } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 
-import { convertCurrency, formatCurrency } from '../lib/currency';
+import { convertCurrency, formatCurrency, getCurrencyForCountry } from '../lib/currency';
+import type { CurrencyCode } from '../types';
 
 export function TodayPage() {
-    const { expenses, trips } = useStorage();
+    const { expenses, trips, activeTripId } = useStorage();
     const today = new Date();
 
     // Filter today's expenses
     const todaysExpenses = expenses.filter(e => isSameDay(new Date(e.date), today));
-    // Get active trip logic:
-    // 1. Priority: Trip that encompasses "now"
-    // 2. Fallback: Trip that "todays expenses" belong to (if any)
-    let activeTrip = trips.find(t => {
-        const start = new Date(t.startDate);
-        const end = new Date(t.endDate);
-        // Reset time parts for accurate date comparison
-        const current = new Date();
-        start.setHours(0, 0, 0, 0);
-        end.setHours(23, 59, 59, 999);
-        current.setHours(12, 0, 0, 0); // compare against mid-day just to be safe or use isInterval
-        return current >= start && current <= end;
-    });
 
-    // Fallback: If no date-match, check valid expenses from today
+    // Determine the "Active Context" for display
+    let activeTrip = trips.find(t => t.id === activeTripId);
+
+    // If no manually active trip, try to find one by date
+    if (!activeTrip) {
+        activeTrip = trips.find(t => {
+            const start = new Date(t.startDate);
+            const end = new Date(t.endDate);
+            const current = new Date();
+            start.setHours(0, 0, 0, 0);
+            end.setHours(23, 59, 59, 999);
+            current.setHours(12, 0, 0, 0);
+            return current >= start && current <= end;
+        });
+    }
+
+    // Fallback: If no date-match, check valid expenses from today to guess trip
     if (!activeTrip && todaysExpenses.length > 0) {
         // Find the most frequent tripId in today's expenses
         const tripCounts = todaysExpenses.reduce((acc, curr) => {
@@ -33,9 +37,48 @@ export function TodayPage() {
             return acc;
         }, {} as Record<string, number>);
 
-        // Find tripId with max count
         const mostLikelyTripId = Object.keys(tripCounts).reduce((a, b) => tripCounts[a] > tripCounts[b] ? a : b);
         activeTrip = trips.find(t => t.id === mostLikelyTripId);
+    }
+
+    // Determine Display Currency
+    // 1. If activeTrip exists:
+    //    - Priority: Trip's set currency
+    //    - Secondary: Trip's country local currency (if different from set currency)
+
+    let mainDisplayCurrency: CurrencyCode | undefined = activeTrip?.currency;
+    const homeCurrency = 'TWD'; // Future: Get from settings
+    let subDisplayCurrency = null; // What to show in small text
+
+    if (!mainDisplayCurrency && todaysExpenses.length > 0) {
+        // Guess from expenses
+        const currencyCounts = todaysExpenses.reduce((acc, curr) => {
+            acc[curr.currency] = (acc[curr.currency] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        mainDisplayCurrency = Object.keys(currencyCounts).reduce((a, b) => currencyCounts[a] > currencyCounts[b] ? a : b) as any;
+    }
+
+    if (!mainDisplayCurrency) mainDisplayCurrency = homeCurrency;
+
+    // Logic for Sub Display
+    if (activeTrip && activeTrip.country) {
+        const countryLocalCurrency = getCurrencyForCountry(activeTrip.country);
+
+        // Scenario A: Trip Currency is TWD (Home), but we are in Japan (JPY)
+        // User wants to see TWD big (current behavior), but JPY small
+        if (mainDisplayCurrency === homeCurrency && countryLocalCurrency && countryLocalCurrency !== homeCurrency) {
+            subDisplayCurrency = countryLocalCurrency as CurrencyCode;
+        }
+        // Scenario B: Trip Currency is JPY (Local), we want to see TWD (Home) small
+        else if (mainDisplayCurrency !== homeCurrency) {
+            subDisplayCurrency = homeCurrency as CurrencyCode;
+        }
+    } else {
+        // No trip, just show home equivalent if main is foreign
+        if (mainDisplayCurrency !== homeCurrency) {
+            subDisplayCurrency = homeCurrency as CurrencyCode;
+        }
     }
 
     // Recent 3 expenses (from all time or active trip)
@@ -43,24 +86,15 @@ export function TodayPage() {
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 3);
 
-    // Calculate totals with conversion AFTER activeTrip is determined
-    const targetCurrency = activeTrip?.currency || 'TWD';
-    const homeCurrency = 'TWD'; // Assuming Home is TWD for now, should come from settings
-
-    let totalInTarget = 0;
-    let totalInHome = 0;
+    let totalInMain = 0;
+    let totalInSub = 0;
 
     todaysExpenses.forEach(e => {
-        // Convert expense amount to Home Currency (TWD) first
-        const inHome = convertCurrency(e.amount, e.currency, homeCurrency);
-        totalInHome += inHome;
-
-        // Convert to Target Currency (Active Trip Currency)
-        const inTarget = convertCurrency(e.amount, e.currency, targetCurrency);
-        totalInTarget += inTarget;
+        totalInMain += convertCurrency(e.amount, e.currency, mainDisplayCurrency!);
+        if (subDisplayCurrency) {
+            totalInSub += convertCurrency(e.amount, e.currency, subDisplayCurrency);
+        }
     });
-
-
 
     return (
         <div className="space-y-6 px-4 pt-6 pb-24">
@@ -84,12 +118,12 @@ export function TodayPage() {
                     <div className="flex flex-col">
                         <div className="flex items-baseline gap-2">
                             <span className="text-4xl font-heading font-bold">
-                                {formatCurrency(totalInTarget, targetCurrency)}
+                                {formatCurrency(totalInMain, mainDisplayCurrency!)} <span className="text-lg font-medium text-white/80">{mainDisplayCurrency}</span>
                             </span>
                         </div>
-                        {activeTrip && targetCurrency !== homeCurrency && (
+                        {subDisplayCurrency && (
                             <div className="mt-1 text-primary-light/80 font-medium text-sm flex items-center gap-1">
-                                <span>≈ {formatCurrency(totalInHome, homeCurrency)}</span>
+                                <span>≈ {formatCurrency(totalInSub, subDisplayCurrency)} {subDisplayCurrency}</span>
                             </div>
                         )}
                     </div>

@@ -26,6 +26,12 @@ export interface ExpenseSplit {
 
 export type ExpenseCategory = 'food' | 'transport' | 'accommodation' | 'shopping' | 'entertainment' | 'other';
 
+export interface ExpenseItem {
+    id: string;
+    name: string;
+    amount: number;
+}
+
 export interface Expense {
     id: string;
     tripId: string;
@@ -38,6 +44,7 @@ export interface Expense {
     paidBy: string; // 'user' or companion UUID. Default 'user'
     splits: ExpenseSplit[]; // List of splits. If empty, assumed equal/default.
     images?: string[]; // URLs for receipt or context photos
+    items?: ExpenseItem[]; // Itemized list of products
 }
 
 export interface UserSettings {

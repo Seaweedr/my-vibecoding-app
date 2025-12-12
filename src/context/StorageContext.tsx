@@ -43,18 +43,24 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
         if (stored) {
             try {
                 const parsed = JSON.parse(stored);
+
+                const safeDate = (d: any): Date => {
+                    const date = new Date(d);
+                    return isNaN(date.getTime()) ? new Date() : date;
+                };
+
                 // Schema Migration logic (basic)
                 return {
                     ...INITIAL_DATA, // Default new fields
                     ...parsed,
                     trips: (parsed.trips || []).map((t: any) => ({
                         ...t,
-                        startDate: new Date(t.startDate),
-                        endDate: new Date(t.endDate),
+                        startDate: safeDate(t.startDate),
+                        endDate: safeDate(t.endDate),
                     })),
                     expenses: (parsed.expenses || []).map((e: any) => ({
                         ...e,
-                        date: new Date(e.date),
+                        date: safeDate(e.date),
                         // Migration: Add new required fields if missing
                         paidBy: e.paidBy || 'user',
                         splits: e.splits || [],
