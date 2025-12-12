@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import type { Trip } from '../types';
-import { format } from 'date-fns';
+
 import { formatCurrency, convertCurrency, getCurrencyForCountry } from '../lib/currency';
 import type { CurrencyCode } from '../types';
 import { PieChart } from 'lucide-react';

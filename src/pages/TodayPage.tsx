@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useStorage } from '../context/StorageContext';
-import { Camera, Plus, Coffee, TrendingUp } from 'lucide-react';
+import { Camera, Plus } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 
 import { convertCurrency, formatCurrency } from '../lib/currency';
@@ -60,7 +60,7 @@ export function TodayPage() {
         totalInTarget += inTarget;
     });
 
-    const exchangeRate = activeTrip ? convertCurrency(1, activeTrip.currency, homeCurrency) : 1;
+
 
     return (
         <div className="space-y-6 px-4 pt-6 pb-24">
