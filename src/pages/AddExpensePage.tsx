@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { useStorage } from '../context/StorageContext';
 import type { ExpenseCategory, CurrencyCode, ExpenseItem } from '../types';
 import { ArrowLeft, Check, Coffee, Bus, Bed, ShoppingBag, Music, MoreHorizontal, Plus, X, Clock, Camera, ChevronUp, ChevronDown } from 'lucide-react';
@@ -19,6 +19,7 @@ export function AddExpensePage() {
     const { tripId } = useParams<{ tripId: string }>();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { trips, addExpense, updateExpense, expenses } = useStorage();
 
     const trip = trips.find(t => t.id === tripId);
@@ -62,7 +63,11 @@ export function AddExpensePage() {
     );
     const [showSplit, setShowSplit] = useState(involvedCompanionIds.length > 1);
 
-    const [images, setImages] = useState<string[]>(existingExpense ? (existingExpense.images || []) : []);
+    const [images, setImages] = useState<string[]>(
+        existingExpense
+            ? (existingExpense.images || [])
+            : (location.state && (location.state as any).scannedImage ? [(location.state as any).scannedImage] : [])
+    );
     const [items, setItems] = useState<ExpenseItem[]>(existingExpense?.items || []);
 
     // Auto-sum effect for items
