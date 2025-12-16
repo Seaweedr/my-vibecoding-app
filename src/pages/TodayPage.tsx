@@ -111,7 +111,7 @@ export function TodayPage() {
                 <div className="flex items-center gap-3">
                     <img src="/assets/nori_logo.png" alt="Nori" className="w-10 h-10 rounded-[12px]" />
                     <div>
-                        <h1 className="text-3xl font-black text-text font-heading tracking-tight">今日總覽</h1>
+                        <h1 className="text-2xl font-bold text-text font-heading tracking-tight">今日總覽</h1>
                         <p className="text-sm text-text-secondary font-medium mt-1">
                             {activeTrip
                                 ? activeTrip.name

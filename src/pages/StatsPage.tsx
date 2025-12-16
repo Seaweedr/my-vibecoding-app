@@ -92,7 +92,7 @@ export function StatsPage() {
                         </button>
                     </div>
                 ) : null}
-                <h1 className="text-3xl font-black text-text font-heading tracking-tight">
+                <h1 className="text-2xl font-bold text-text font-heading tracking-tight">
                     {filteredTrip ? `${filteredTrip.name} 統計` : '統計分析'}
                 </h1>
                 <p className="text-sm text-text-secondary font-medium mt-1">
