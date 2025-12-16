@@ -92,10 +92,10 @@ export function StatsPage() {
                         </button>
                     </div>
                 ) : null}
-                <h1 className="text-2xl font-heading font-bold text-text">
+                <h1 className="text-3xl font-black text-text font-heading tracking-tight">
                     {filteredTrip ? `${filteredTrip.name} 統計` : '統計分析'}
                 </h1>
-                <p className="text-text-secondary">
+                <p className="text-sm text-text-secondary font-medium mt-1">
                     {filteredTrip
                         ? `這趟旅程的總消費分析。`
                         : `跨越 ${trips.length} 次旅程的總消費。`}

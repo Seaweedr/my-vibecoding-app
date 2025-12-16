@@ -13,8 +13,9 @@
   --color-text: #111111;
   --color-text-secondary: #8E8E93;
 
-  --font-heading: "Outfit", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
+  /* English: Roboto, Chinese: Noto Sans TC */
+  --font-heading: "Roboto", "Noto Sans TC", system-ui, sans-serif;
+  --font-body: "Roboto", "Noto Sans TC", system-ui, sans-serif;
 }
 
 /* Global Styles */
@@ -261,11 +262,15 @@ input[type="date"]::-webkit-clear-button,
 input[type="datetime-local"]::-webkit-clear-button {
   display: none;
 }
+
 /* Helper Animation for Illustrations */
 @keyframes bounce-slow {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(-5px);
   }
+
   50% {
     transform: translateY(5px);
   }

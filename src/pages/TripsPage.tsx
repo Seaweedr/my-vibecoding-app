@@ -103,8 +103,8 @@ export function TripsPage() {
             <div className="space-y-6 px-4 pt-6 pb-24">
                 <header className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-black text-text font-heading tracking-tight">我的旅程</h1>
-                        <p className="text-sm text-text-secondary mt-1 font-medium">
+                        <h1 className="text-3xl font-black text-text font-heading tracking-tight">我的旅程</h1>
+                        <p className="text-sm text-text-secondary font-medium mt-1">
                             {trips.length} 個精彩回憶
                         </p>
                     </div>

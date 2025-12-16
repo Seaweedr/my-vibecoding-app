@@ -42,7 +42,7 @@ export function SettingsPage() {
     return (
         <div className="space-y-6 px-4 pt-6 pb-24">
             <header>
-                <h1 className="text-2xl font-heading font-bold text-text">個人設定</h1>
+                <h1 className="text-3xl font-black text-text font-heading tracking-tight">個人設定</h1>
             </header>
 
             {/* Profile Section */}
