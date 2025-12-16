@@ -32,8 +32,9 @@ export function AddExpensePage() {
     const existingExpense = expenseId ? expenses.find(e => e.id === expenseId) : null;
     const isEditMode = !!existingExpense;
 
-    // Check for passed state image (could be raw base64 from capture page)
-    const passedImage = location.state && (location.state as any).scannedImage;
+    // Check for passed state image (ID preferred, or raw base64 fallback)
+    const passedImageId = location.state && (location.state as any).scannedImageId;
+    const passedRawImage = location.state && (location.state as any).scannedImage;
 
     const mode = searchParams.get('mode') || 'manual';
 
@@ -95,23 +96,26 @@ export function AddExpensePage() {
         loadImages();
     }, [imageIds]);
 
-    // Handle initial passed image (from capture) -> Save to DB immediately
+    // Handle initial passed image
     useEffect(() => {
         const initPassedImage = async () => {
-            if (passedImage && !isEditMode && imageIds.length === 0) {
-                try {
-                    // Save the passed capture to DB
-                    const id = await saveImageToDB(passedImage);
-                    setImageIds([id]);
-                } catch (e) {
-                    console.error("Failed to init passed image", e);
-                    // Fallback to raw if DB fails
-                    setImageIds([passedImage]);
+            if (!isEditMode && imageIds.length === 0) {
+                if (passedImageId) {
+                    // Clean ID passed from BottomNav
+                    setImageIds([passedImageId]);
+                } else if (passedRawImage) {
+                    // Legacy/Fallback: Raw base64 passed
+                    try {
+                        const id = await saveImageToDB(passedRawImage);
+                        setImageIds([id]);
+                    } catch (e) {
+                        console.error("Failed to init raw image", e);
+                    }
                 }
             }
         };
         initPassedImage();
-    }, [passedImage, isEditMode]);
+    }, [passedImageId, passedRawImage, isEditMode]);
 
     // OCR Logic
     useEffect(() => {

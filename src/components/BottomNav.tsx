@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { useStorage } from '../context/StorageContext';
 import { compressImage } from '../lib/imageUtils';
+import { saveImageToDB } from '../lib/db';
 
 export function BottomNav() {
     const { activeTripId, trips } = useStorage();
@@ -16,18 +17,21 @@ export function BottomNav() {
                 const result = reader.result as string;
                 try {
                     const compressed = await compressImage(result);
+                    // Save to DB immediately to avoid passing large state
+                    const id = await saveImageToDB(compressed);
+
                     // Determine target trip
                     const targetTripId = activeTripId || (trips.length > 0 ? trips[0].id : null);
 
                     if (targetTripId) {
                         navigate(`/trips/${targetTripId}/add-expense?mode=scan`, {
-                            state: { scannedImage: compressed }
+                            state: { scannedImageId: id }  // Pass ID only
                         });
                     } else {
                         navigate('/trips');
                     }
                 } catch (error) {
-                    console.error("Compression failed", error);
+                    console.error("Capture failed", error);
                 }
             };
             reader.readAsDataURL(file);

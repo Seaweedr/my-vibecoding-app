@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { AppData, Trip, Expense, UserSettings, Companion } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { saveImageToDB } from '../lib/db';
 
 interface StorageContextType {
     trips: Trip[];
@@ -77,8 +78,52 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
 
     const [activeTripId, setActiveTripId] = useState<string | null>(null);
 
+    // Migration Effect: Move heavy images from LocalStorage to IndexedDB
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        const migrateImages = async () => {
+            let hasChanges = false;
+            const migratedExpenses = await Promise.all(data.expenses.map(async (expense) => {
+                if (!expense.images || expense.images.length === 0) return expense;
+
+                const newImages = await Promise.all(expense.images.map(async (img) => {
+                    // Check if it's a base64 data URL
+                    if (img.startsWith('data:image')) {
+                        try {
+                            const id = await saveImageToDB(img);
+                            hasChanges = true;
+                            return id;
+                        } catch (e) {
+                            console.error("Migration failed for image", e);
+                            return img; // Keep as is if failed
+                        }
+                    }
+                    return img; // Already an ID or URL
+                }));
+
+                return { ...expense, images: newImages };
+            }));
+
+            if (hasChanges) {
+                console.log("Migrated legacy images to IndexedDB");
+                setData(prev => ({ ...prev, expenses: migratedExpenses }));
+            }
+        };
+
+        // Run migration only once on mount could be better, but checking here is safe enough as key check is fast
+        // To avoid infinite loop, we check if we actually have base64 data
+        const needsMigration = data.expenses.some(e => e.images?.some(img => img.startsWith('data:image')));
+        if (needsMigration) {
+            migrateImages();
+        }
+    }, [data.expenses]);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+            console.error("Failed to save to localStorage", e);
+            alert("儲存失敗：空間不足。請嘗試刪除一些舊資料。");
+        }
     }, [data]);
 
     const addTrip = (tripData: Omit<Trip, 'id'>, companionNames: string[] = []) => {
