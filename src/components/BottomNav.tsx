@@ -2,6 +2,7 @@ import { Home, Map, Camera, PieChart, User } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { useStorage } from '../context/StorageContext';
+import { compressImage } from '../lib/imageUtils';
 
 export function BottomNav() {
     const { activeTripId, trips } = useStorage();
@@ -11,17 +12,22 @@ export function BottomNav() {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onloadend = () => {
+            reader.onloadend = async () => {
                 const result = reader.result as string;
-                // Determine target trip
-                const targetTripId = activeTripId || (trips.length > 0 ? trips[0].id : null);
+                try {
+                    const compressed = await compressImage(result);
+                    // Determine target trip
+                    const targetTripId = activeTripId || (trips.length > 0 ? trips[0].id : null);
 
-                if (targetTripId) {
-                    navigate(`/trips/${targetTripId}/add-expense?mode=scan`, {
-                        state: { scannedImage: result }
-                    });
-                } else {
-                    navigate('/trips');
+                    if (targetTripId) {
+                        navigate(`/trips/${targetTripId}/add-expense?mode=scan`, {
+                            state: { scannedImage: compressed }
+                        });
+                    } else {
+                        navigate('/trips');
+                    }
+                } catch (error) {
+                    console.error("Compression failed", error);
                 }
             };
             reader.readAsDataURL(file);

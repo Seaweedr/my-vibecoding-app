@@ -5,6 +5,7 @@ import type { ExpenseCategory, CurrencyCode, ExpenseItem } from '../types';
 import { ArrowLeft, Check, Coffee, Bus, Bed, ShoppingBag, Music, MoreHorizontal, Plus, X, Clock, Camera, ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format, isValid } from 'date-fns';
+import { compressImage } from '../lib/imageUtils';
 
 const CATEGORIES: { id: ExpenseCategory; label: string; icon: any }[] = [
     { id: 'food', label: '餐飲', icon: Coffee },
@@ -115,28 +116,33 @@ export function AddExpensePage() {
         if (e.target.files) {
             Array.from(e.target.files).forEach(file => {
                 const reader = new FileReader();
-                reader.onloadend = () => {
-                    setImages(prev => [...prev, reader.result as string]);
+                reader.onloadend = async () => {
+                    try {
+                        const compressed = await compressImage(reader.result as string);
+                        setImages(prev => [...prev, compressed]);
+                    } catch (err) {
+                        console.error("Image compression failed", err);
+                    }
                 };
                 reader.readAsDataURL(file);
             });
         }
     };
 
-    // Simulate OCR pre-fill
+    // Simulate OCR pre-fill with generic data
     useEffect(() => {
         if (mode === 'scan' && !isEditMode) {
-            // Simulate a delay then fill with multi-item data
+            // Simulate a delay then fill with placeholder data
             const timer = setTimeout(() => {
-                const scannedItems: ExpenseItem[] = [
-                    { id: crypto.randomUUID(), name: '豚骨拉麵', amount: 980 },
-                    { id: crypto.randomUUID(), name: '半熟蛋', amount: 120 },
-                    { id: crypto.randomUUID(), name: '冰烏龍茶', amount: 150 },
+                // Use generic names to avoid confusion
+                const demoItems: ExpenseItem[] = [
+                    { id: crypto.randomUUID(), name: '掃描項目 1', amount: 100 },
+                    { id: crypto.randomUUID(), name: '掃描項目 2', amount: 50 },
                 ];
 
-                setItems(scannedItems);
-                setMerchant('一蘭拉麵');
-                setCategory('food');
+                setItems(demoItems);
+                setMerchant('未命名商家');
+                setCategory('other');
                 // Note: setAmount is not needed as it's handled by the autocalc effect
             }, 800);
             return () => clearTimeout(timer);
