@@ -2,10 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { useStorage } from '../context/StorageContext';
 import type { ExpenseCategory, CurrencyCode, ExpenseItem } from '../types';
-import { ArrowLeft, Check, Coffee, Bus, Bed, ShoppingBag, Music, MoreHorizontal, Plus, X, Clock, Camera, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Check, Coffee, Bus, Bed, ShoppingBag, Music, MoreHorizontal, Plus, X, Clock, Camera, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format, isValid } from 'date-fns';
 import { compressImage } from '../lib/imageUtils';
+import { scanReceipt } from '../lib/ocr';
+import { saveImageToDB, getImageFromDB } from '../lib/db';
 
 const CATEGORIES: { id: ExpenseCategory; label: string; icon: any }[] = [
     { id: 'food', label: '餐飲', icon: Coffee },
@@ -30,6 +32,9 @@ export function AddExpensePage() {
     const existingExpense = expenseId ? expenses.find(e => e.id === expenseId) : null;
     const isEditMode = !!existingExpense;
 
+    // Check for passed state image (could be raw base64 from capture page)
+    const passedImage = location.state && (location.state as any).scannedImage;
+
     const mode = searchParams.get('mode') || 'manual';
 
     // State Initialization
@@ -53,9 +58,16 @@ export function AddExpensePage() {
     const [date, setDate] = useState(getInitialDate());
     const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(existingExpense ? existingExpense.currency : (trip?.currency || 'TWD'));
 
-    const dateInputRef = useRef<HTMLInputElement>(null);
+    // imageIds holds the keys for DB (or rarely base64 for legacy support if needed, but we try to migrate)
+    const [imageIds, setImageIds] = useState<string[]>(existingExpense ? (existingExpense.images || []) : []);
+    // displayImages holds the actual base64/blob for UI rendering
+    const [displayImages, setDisplayImages] = useState<string[]>([]);
 
-    // Split Logic
+    const [items, setItems] = useState<ExpenseItem[]>(existingExpense?.items || []);
+
+    const [isScanning, setIsScanning] = useState(false); // UI state for OCR loading
+
+    const dateInputRef = useRef<HTMLInputElement>(null);
     const companions = useStorage().getTripCompanions(trip?.id || '');
     const [involvedCompanionIds, setInvolvedCompanionIds] = useState<string[]>(
         existingExpense && existingExpense.splits.length > 0
@@ -64,12 +76,79 @@ export function AddExpensePage() {
     );
     const [showSplit, setShowSplit] = useState(involvedCompanionIds.length > 1);
 
-    const [images, setImages] = useState<string[]>(
-        existingExpense
-            ? (existingExpense.images || [])
-            : (location.state && (location.state as any).scannedImage ? [(location.state as any).scannedImage] : [])
-    );
-    const [items, setItems] = useState<ExpenseItem[]>(existingExpense?.items || []);
+    // Load display images from DB whenever imageIds change
+    useEffect(() => {
+        const loadImages = async () => {
+            const loaded: string[] = [];
+            for (const id of imageIds) {
+                // Check if it's already a base64 string (legacy or temp)
+                if (id.startsWith('data:')) {
+                    loaded.push(id);
+                } else {
+                    // Try fetch from DB
+                    const fromDB = await getImageFromDB(id);
+                    if (fromDB) loaded.push(fromDB);
+                }
+            }
+            setDisplayImages(loaded);
+        };
+        loadImages();
+    }, [imageIds]);
+
+    // Handle initial passed image (from capture) -> Save to DB immediately
+    useEffect(() => {
+        const initPassedImage = async () => {
+            if (passedImage && !isEditMode && imageIds.length === 0) {
+                try {
+                    // Save the passed capture to DB
+                    const id = await saveImageToDB(passedImage);
+                    setImageIds([id]);
+                } catch (e) {
+                    console.error("Failed to init passed image", e);
+                    // Fallback to raw if DB fails
+                    setImageIds([passedImage]);
+                }
+            }
+        };
+        initPassedImage();
+    }, [passedImage, isEditMode]);
+
+    // OCR Logic
+    useEffect(() => {
+        const performOCR = async () => {
+            // Only scan if: in scan mode, not editing existing, we have images, not already scanning, and no items yet
+            if (mode === 'scan' && !isEditMode && displayImages.length > 0 && !isScanning && items.length === 0 && amount === '') {
+                setIsScanning(true);
+                try {
+                    // Use the first image for OCR
+                    const targetImage = displayImages[0];
+                    const result = await scanReceipt(targetImage);
+
+                    if (result.total) {
+                        setAmount(result.total.toString());
+                    }
+                    if (result.merchant) {
+                        setMerchant(result.merchant);
+                    }
+                    if (result.items.length > 0) {
+                        const newItems = result.items.map(i => ({
+                            id: crypto.randomUUID(),
+                            name: i.name,
+                            amount: i.amount
+                        }));
+                        setItems(newItems);
+                    }
+                } catch (err) {
+                    console.error("OCR Error", err);
+                } finally {
+                    setIsScanning(false);
+                }
+            }
+        };
+
+        // Trigger OCR only when we have the image loaded and in scan mode
+        performOCR();
+    }, [mode, isEditMode, displayImages]);
 
     // Auto-sum effect for items
     useEffect(() => {
@@ -119,35 +198,17 @@ export function AddExpensePage() {
                 reader.onloadend = async () => {
                     try {
                         const compressed = await compressImage(reader.result as string);
-                        setImages(prev => [...prev, compressed]);
+                        // Save to DB immediately
+                        const id = await saveImageToDB(compressed);
+                        setImageIds(prev => [...prev, id]);
                     } catch (err) {
-                        console.error("Image compression failed", err);
+                        console.error("Image upload failed", err);
                     }
                 };
                 reader.readAsDataURL(file);
             });
         }
     };
-
-    // Simulate OCR pre-fill with generic data
-    useEffect(() => {
-        if (mode === 'scan' && !isEditMode) {
-            // Simulate a delay then fill with placeholder data
-            const timer = setTimeout(() => {
-                // Use generic names to avoid confusion
-                const demoItems: ExpenseItem[] = [
-                    { id: crypto.randomUUID(), name: '掃描項目 1', amount: 100 },
-                    { id: crypto.randomUUID(), name: '掃描項目 2', amount: 50 },
-                ];
-
-                setItems(demoItems);
-                setMerchant('未命名商家');
-                setCategory('other');
-                // Note: setAmount is not needed as it's handled by the autocalc effect
-            }, 800);
-            return () => clearTimeout(timer);
-        }
-    }, [mode, isEditMode]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -171,7 +232,7 @@ export function AddExpensePage() {
             note: '',
             paidBy: 'user',
             splits,
-            images,
+            images: imageIds, // Store IDs
             items: items.length > 0 ? items : undefined,
         };
 
@@ -283,6 +344,15 @@ export function AddExpensePage() {
                     </div>
                 </div>
 
+                {/* OCR Status Banner */}
+                {isScanning && (
+                    <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center justify-center gap-2 text-primary animate-pulse">
+                        <Loader2 className="animate-spin" size={18} />
+                        <span className="text-sm font-bold">正在掃描收據內容...</span>
+                    </div>
+                )}
+
+
                 {/* Categories */}
                 <div className="grid grid-cols-3 gap-3">
                     {CATEGORIES.map(cat => (
@@ -328,14 +398,17 @@ export function AddExpensePage() {
                             onChange={handleImageUpload}
                         />
                     </label>
-                    {images.map((img, idx) => (
+                    {/* Display actual base64 images */}
+                    {displayImages.map((img, idx) => (
                         <div key={idx} className="relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden shadow-sm border border-gray-100 group">
                             <img src={img} alt="receipt" className="w-full h-full object-cover" />
                             <button
                                 type="button"
                                 onClick={(e) => {
                                     e.preventDefault();
-                                    setImages(prev => prev.filter((_, i) => i !== idx));
+                                    // Remove ID based on index mismatch (simple way since they sync)
+                                    // Better to filter both states
+                                    setImageIds(prev => prev.filter((_, i) => i !== idx));
                                 }}
                                 className="absolute top-1 right-1 bg-black/60 backdrop-blur-sm text-white rounded-full p-1 hover:bg-red-500 transition-colors shadow-sm opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                             >
