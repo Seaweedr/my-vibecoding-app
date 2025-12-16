@@ -87,7 +87,7 @@ export function CreateTripPage() {
                             required
                             type="text"
                             placeholder="例如：東京賞櫻"
-                            className="w-full p-4 bg-white rounded-[20px] border-none shadow-sm focus:ring-2 focus:ring-primary outline-none font-medium"
+                            className="w-full p-4 bg-white rounded-[20px] border border-gray-200 outline-none font-medium focus:ring-2 focus:ring-primary"
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
                         />
@@ -99,7 +99,7 @@ export function CreateTripPage() {
                             <input
                                 required
                                 type="date"
-                                className="w-full p-4 bg-white rounded-[20px] border-none shadow-sm outline-none"
+                                className="w-full p-4 bg-white rounded-[20px] border border-gray-200 outline-none"
                                 value={formData.startDate}
                                 onChange={e => setFormData({ ...formData, startDate: e.target.value })}
                             />
@@ -109,7 +109,7 @@ export function CreateTripPage() {
                             <input
                                 required
                                 type="date"
-                                className="w-full p-4 bg-white rounded-[20px] border-none shadow-sm outline-none"
+                                className="w-full p-4 bg-white rounded-[20px] border border-gray-200 outline-none"
                                 value={formData.endDate}
                                 onChange={e => setFormData({ ...formData, endDate: e.target.value })}
                             />
@@ -121,7 +121,7 @@ export function CreateTripPage() {
                         <input
                             type="text"
                             placeholder="例如：日本"
-                            className="w-full p-4 bg-white rounded-[20px] border-none shadow-sm outline-none"
+                            className="w-full p-4 bg-white rounded-[20px] border border-gray-200 outline-none"
                             value={formData.country}
                             onChange={e => {
                                 const val = e.target.value;
@@ -156,7 +156,7 @@ export function CreateTripPage() {
                     <div>
                         <label className="block text-sm font-medium text-text-secondary mb-1">主要貨幣</label>
                         <select
-                            className="w-full p-4 bg-white rounded-[20px] border-none shadow-sm outline-none appearance-none"
+                            className="w-full p-4 bg-white rounded-[20px] border border-gray-200 outline-none appearance-none"
                             value={selectedCurrency}
                             onChange={e => setSelectedCurrency(e.target.value as CurrencyCode)}
                         >
@@ -171,7 +171,7 @@ export function CreateTripPage() {
                         <input
                             type="number"
                             placeholder="0.00"
-                            className="w-full p-4 bg-white rounded-[20px] border-none shadow-sm outline-none"
+                            className="w-full p-4 bg-white rounded-[20px] border border-gray-200 outline-none"
                             value={formData.budget}
                             onChange={e => setFormData({ ...formData, budget: e.target.value })}
                         />
@@ -182,7 +182,7 @@ export function CreateTripPage() {
                         <input
                             type="text"
                             placeholder="請用逗號分隔姓名 (例如：小明, 小美)"
-                            className="w-full p-4 bg-white rounded-[20px] border-none shadow-sm outline-none"
+                            className="w-full p-4 bg-white rounded-[20px] border border-gray-200 outline-none"
                             value={formData.companions}
                             onChange={e => setFormData({ ...formData, companions: e.target.value })}
                         />
@@ -194,7 +194,7 @@ export function CreateTripPage() {
                     <input
                         type="text"
                         placeholder="https://example.com/image.jpg"
-                        className="w-full p-4 rounded-[20px] border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-gray-300"
+                        className="w-full p-4 rounded-[20px] border border-gray-200 outline-none transition-all placeholder:text-gray-300 focus:border-primary focus:ring-1 focus:ring-primary"
                         value={formData.coverImage || ''}
                         onChange={(e) => setFormData(prev => ({ ...prev, coverImage: e.target.value }))}
                     />

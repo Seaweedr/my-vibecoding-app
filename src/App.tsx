@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { TodayPage } from './pages/TodayPage';
 import { TripsPage } from './pages/TripsPage';
@@ -16,13 +16,27 @@ import { SettingsNotificationsPage } from './pages/settings/SettingsNotification
 import { SettingsCompanionsPage } from './pages/settings/SettingsCompanionsPage';
 import { TripStoryPage } from './pages/TripStoryPage';
 import { OnboardingPage } from './pages/OnboardingPage';
+import { SplashScreen } from './pages/SplashScreen';
+import { useState } from 'react';
+
+const LogoutHandler = () => {
+  const navigate = useNavigate();
+  return <SplashScreen onFinish={() => navigate('/onboarding')} />;
+};
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
+
   return (
     <StorageProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/logout" element={<LogoutHandler />} />
           <Route path="/story/:tripId" element={<TripStoryPage />} />
           <Route path="/trips/:tripId" element={<TripDetailPage />} />
 

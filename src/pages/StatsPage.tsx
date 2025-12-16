@@ -109,7 +109,7 @@ export function StatsPage() {
             ) : (
                 <div className="space-y-6 px-4">
                     {/* Pie Chart */}
-                    <div className="bg-white p-6 rounded-[24px] shadow-sm flex flex-col items-center">
+                    <div className="bg-white p-6 rounded-[24px] border border-gray-200 flex flex-col items-center">
                         <h3 className="text-lg font-heading font-semibold mb-4 w-full">消費類別分析</h3>
                         {displayedExpenses.length > 0 ? (
                             <>
@@ -176,7 +176,7 @@ export function StatsPage() {
                                         <Link
                                             key={trip.id}
                                             to={`/stats?tripId=${trip.id}`}
-                                            className="bg-white p-4 rounded-[20px] shadow-sm flex items-center justify-between group active:scale-[0.98] transition-all border border-transparent hover:border-primary/20"
+                                            className="bg-white p-4 rounded-[20px] border border-gray-200 flex items-center justify-between group active:scale-[0.98] transition-all"
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
@@ -206,7 +206,7 @@ export function StatsPage() {
 
                     {/* Line Chart */}
                     {timeData.length > 1 && (
-                        <div className="bg-white p-6 rounded-[24px] shadow-sm">
+                        <div className="bg-white p-6 rounded-[24px] border border-gray-200">
                             <h3 className="text-lg font-heading font-semibold mb-4">每日消費趨勢</h3>
                             <div className="w-full h-48">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -239,7 +239,7 @@ export function StatsPage() {
                     )}
 
                     {/* Export Actions */}
-                    <div className="bg-white p-6 rounded-[24px] shadow-sm space-y-4">
+                    <div className="bg-white p-6 rounded-[24px] border border-gray-200 space-y-4">
                         <h3 className="text-lg font-heading font-semibold">資料管理</h3>
                         <div className="grid grid-cols-1 gap-3">
                             <button

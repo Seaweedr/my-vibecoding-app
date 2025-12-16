@@ -11,18 +11,7 @@ interface TripCardProps {
     totalSpend: number;
 }
 
-// Simple hashCode function for string
-function stringHashCode(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash |= 0; // Convert to 32bit integer
-    }
-    return hash;
-}
-
-const COVER_EMOJIS = ['✈️', '🌍', '🗺️', '🏞️', '🏖️', '🏙️', '🚢', '🚂', '🚗', '🏕️', '🗼', '🗽', '⛩️', '🕌', '🏰', '🌉', '🏔️', '🌅', '🌌', '🌿'];
+// stringHashCode and COVER_EMOJIS removed
 
 
 export function TripCard({ trip, expenseCount, totalSpend }: TripCardProps) {
@@ -38,7 +27,7 @@ export function TripCard({ trip, expenseCount, totalSpend }: TripCardProps) {
 
     return (
         <Link to={`/trips/${trip.id}`} className="block group relative">
-            <div className="bg-white rounded-[20px] shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] active:shadow-[0_2px_4px_-2px_rgba(0,0,0,0.05)] transition-all duration-200 overflow-hidden border border-gray-100 active:scale-[0.98]">
+            <div className="bg-white rounded-[20px] border border-gray-200 active:scale-[0.98] transition-all duration-200 overflow-hidden">
                 <div className="h-40 bg-gray-100 relative overflow-hidden">
                     {trip.coverImage ? (
                         <img
@@ -47,10 +36,13 @@ export function TripCard({ trip, expenseCount, totalSpend }: TripCardProps) {
                             className="w-full h-full object-cover"
                         />
                     ) : (
-                        <div className="w-full h-full bg-gray-200/50 flex items-center justify-center relative overflow-hidden">
-                            <span className="text-5xl opacity-80 scale-110">
-                                {COVER_EMOJIS[Math.abs(stringHashCode(trip.name)) % COVER_EMOJIS.length] || '🌿'}
-                            </span>
+                        <div className="w-full h-full bg-gradient-to-br from-primary/5 to-primary/20 flex items-center justify-center relative overflow-hidden">
+                            <div className="absolute inset-0 opacity-10 pattern-dots" />
+                            <img
+                                src="/assets/travel_hero.png"
+                                alt="Default Cover"
+                                className="w-32 h-32 object-contain opacity-90 drop-shadow-sm transform group-hover:scale-110 transition-transform duration-500"
+                            />
                         </div>
                     )}
 
@@ -58,19 +50,19 @@ export function TripCard({ trip, expenseCount, totalSpend }: TripCardProps) {
                     <div className="absolute top-4 left-4 flex gap-2">
                         {!isPast ? (
                             <div className="bg-primary text-white px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm tracking-wide">
-                                ONGOING
+                                旅行中
                             </div>
                         ) : (
                             <div className="bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm tracking-wide">
-                                ENDED
+                                已結束
                             </div>
                         )}
                     </div>
 
-                    {/* Stats Button */}
+                    {/* Stats Button - Enhanced Visibility */}
                     <button
                         onClick={handleStatsClick}
-                        className="absolute top-4 right-4 bg-white/20 backdrop-blur-md hover:bg-white/30 text-white p-2 rounded-full transition-colors active:scale-95 shadow-sm border border-white/20"
+                        className="absolute top-4 right-4 bg-white/90 hover:bg-white text-primary p-2 rounded-full transition-colors active:scale-95 shadow-md border border-white/50"
                         title="統計分析"
                     >
                         <PieChart size={18} />
@@ -79,19 +71,25 @@ export function TripCard({ trip, expenseCount, totalSpend }: TripCardProps) {
 
                 {/* Content Section */}
                 <div className="p-5">
-                    <div className="mb-1">
-                        <div className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-1">
-                            {trip.country || "GLOBAL"}
+                    <div className="mb-3">
+                        <div className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-0.5">
+                            {trip.country || "全球"}
                         </div>
                         <h3 className="font-heading font-bold text-xl text-text leading-tight line-clamp-1">
                             {trip.name}
                         </h3>
                     </div>
 
-                    <div className="flex items-end justify-between mt-4">
-                        <div>
-                            <p className="text-xs text-text-secondary font-medium mb-0.5">Total Spent</p>
+                    {/* Footer Info - Split Layout */}
+                    <div>
+                        <div className="flex justify-between items-center mb-0.5">
+                            <p className="text-xs text-text-secondary font-medium">總花費</p>
+                            <div className="text-xs font-bold text-text-secondary px-2 py-0.5 bg-gray-50 rounded-md">
+                                {expenseCount} 筆
+                            </div>
+                        </div>
 
+                        <div className="flex justify-between items-end">
                             {(() => {
                                 const HOME_CURRENCY = 'TWD';
                                 let mainAmount = 0;
@@ -123,18 +121,18 @@ export function TripCard({ trip, expenseCount, totalSpend }: TripCardProps) {
 
                                 return (
                                     <>
-                                        {/* Main Amount (Always TWD) */}
-                                        <p className="font-heading font-black text-lg text-text">
+                                        {/* Main Amount (Left) */}
+                                        <p className="font-heading font-black text-xl text-text">
                                             {formatCurrency(mainAmount, mainCurrency)}
                                         </p>
 
-                                        {/* Secondary Amount & Rate */}
+                                        {/* Secondary Amount & Rate (Right) */}
                                         {secondaryCurrency && secondaryAmount !== null && (
-                                            <div className="flex flex-col mt-1">
-                                                <p className="text-xs font-bold text-primary">
+                                            <div className="flex flex-col items-end">
+                                                <p className="text-sm font-bold text-primary">
                                                     ≈ {formatCurrency(secondaryAmount, secondaryCurrency)}
                                                 </p>
-                                                <p className="text-[10px] text-text-secondary opacity-80">
+                                                <p className="text-[10px] text-text-secondary opacity-60">
                                                     匯率 {convertCurrency(1, secondaryCurrency, HOME_CURRENCY).toFixed(3)}
                                                 </p>
                                             </div>
@@ -142,9 +140,6 @@ export function TripCard({ trip, expenseCount, totalSpend }: TripCardProps) {
                                     </>
                                 );
                             })()}
-                        </div>
-                        <div className="text-xs font-bold text-text-secondary px-2 py-1 bg-gray-100 rounded-lg">
-                            {expenseCount} items
                         </div>
                     </div>
                 </div>

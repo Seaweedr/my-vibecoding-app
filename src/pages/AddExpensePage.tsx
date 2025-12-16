@@ -335,7 +335,7 @@ export function AddExpensePage() {
                 </div>
 
                 {/* Details - Styled to feel like App UI */}
-                <div className="bg-white rounded-2xl p-4 space-y-4 shadow-sm border border-gray-100">
+                <div className="bg-white rounded-[20px] p-4 space-y-4 border border-gray-200">
                     {/* Merchant Input - Clean line */}
                     <div className="flex flex-col gap-1">
                         <label className="text-xs font-bold text-text-secondary ml-1">商家</label>

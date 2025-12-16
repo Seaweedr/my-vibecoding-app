@@ -2,13 +2,21 @@ import { Link } from 'react-router-dom';
 import { useStorage } from '../context/StorageContext';
 import { Camera, Plus } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
+import { useEffect, useState } from 'react';
 
 import { convertCurrency, formatCurrency, getCurrencyForCountry } from '../lib/currency';
 import type { CurrencyCode } from '../types';
+import { removeBackground } from '../lib/imageUtils';
 
 export function TodayPage() {
     const { expenses, trips, activeTripId } = useStorage();
     const today = new Date();
+    const [heroImage, setHeroImage] = useState<string>('/assets/travel_hero.png');
+
+    useEffect(() => {
+        // Process the image on client-side
+        removeBackground('/assets/travel_hero.png').then(setHeroImage);
+    }, []);
 
     // Filter today's expenses
     const todaysExpenses = expenses.filter(e => isSameDay(new Date(e.date), today));
@@ -45,6 +53,7 @@ export function TodayPage() {
     // 1. If activeTrip exists:
     //    - Priority: Trip's set currency
     //    - Secondary: Trip's country local currency (if different from set currency)
+    // 2. If no trip, try to guess or default to Home
 
     let mainDisplayCurrency: CurrencyCode | undefined = activeTrip?.currency;
     const homeCurrency = 'TWD'; // Future: Get from settings
@@ -98,18 +107,28 @@ export function TodayPage() {
 
     return (
         <div className="space-y-6 px-4 pt-6 pb-24">
-            <header>
-                <h1 className="text-2xl font-heading font-bold text-text">今日總覽</h1>
-                <p className="text-text-secondary">
-                    {activeTrip
-                        ? `正在旅行：${activeTrip.name}`
-                        : format(today, 'yyyy年M月d日 EEEE')}
-                </p>
+            <header className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                    <img src="/assets/nori_logo.png" alt="Nori" className="w-10 h-10 rounded-[12px]" />
+                    <div>
+                        <h1 className="text-xl font-black font-heading text-text leading-none">今日總覽</h1>
+                        <p className="text-text-secondary text-xs font-medium mt-0.5">
+                            {activeTrip
+                                ? activeTrip.name
+                                : format(today, 'yyyy.MM.dd EEEE')}
+                        </p>
+                    </div>
+                </div>
             </header>
 
             {/* 1.1 今日總覽卡片 */}
-            <div className="bg-primary text-white rounded-[24px] p-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-32 bg-white/5 rounded-full blur-3xl translate-x-10 -translate-y-10" />
+            <div className="bg-primary text-white rounded-[20px] p-6 relative overflow-hidden">
+                {/* Decorative Background Image - Centered Right */}
+                <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-48 h-48 rotate-0 pointer-events-none animate-bounce-slow">
+                    <img src={heroImage} alt="" className="w-full h-full object-contain" />
+                </div>
+                {/* Existing blur for extra vibe */}
+                <div className="absolute top-0 right-0 p-32 bg-white/5 rounded-full blur-3xl translate-x-10 -translate-y-10 pointer-events-none" />
 
                 <div className="relative z-10">
                     <p className="text-primary-light font-medium text-sm mb-1">
@@ -137,7 +156,7 @@ export function TodayPage() {
             <div className="grid grid-cols-2 gap-4">
                 <Link
                     to="/capture"
-                    className="flex flex-col items-center justify-center gap-3 bg-white p-6 rounded-[24px] active:scale-95 transition-transform border border-gray-200"
+                    className="flex flex-col items-center justify-center gap-3 bg-white p-6 rounded-[20px] active:scale-95 transition-transform border border-gray-200"
                 >
                     <div className="w-14 h-14 bg-accent text-white rounded-full flex items-center justify-center shadow-lg shadow-accent/20 ring-4 ring-accent/10">
                         <Camera size={26} />
@@ -147,7 +166,7 @@ export function TodayPage() {
 
                 <Link
                     to={activeTrip ? `/trips/${activeTrip.id}/add-expense` : "/trips"}
-                    className="flex flex-col items-center justify-center gap-3 bg-white p-6 rounded-[24px] active:scale-95 transition-transform border border-gray-200"
+                    className="flex flex-col items-center justify-center gap-3 bg-white p-6 rounded-[20px] active:scale-95 transition-transform border border-gray-200"
                 >
                     <div className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/20 ring-4 ring-primary/10">
                         <Plus size={26} />
@@ -162,7 +181,7 @@ export function TodayPage() {
             <div>
                 <div className="flex justify-between items-end mb-4 px-1">
                     <h2 className="text-xl font-heading font-bold text-text">最近記錄</h2>
-                    <Link to="/stats" className="text-sm text-primary font-medium">查看更多</Link>
+                    <Link to="/stats" className="text-sm text-primary font-medium hover:text-primary-dark transition-colors">查看更多</Link>
                 </div>
 
                 {recentExpenses.length > 0 ? (
@@ -170,7 +189,7 @@ export function TodayPage() {
                         {recentExpenses.map(expense => (
                             <div key={expense.id} className="bg-white p-4 rounded-[20px] flex items-center justify-between border border-gray-200">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-2xl">
+                                    <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-2xl border border-gray-100">
                                         {/* Simple mapping for icon/emoji based on category */}
                                         {expense.category === 'food' ? '🍜' :
                                             expense.category === 'transport' ? '🚌' :
@@ -189,8 +208,12 @@ export function TodayPage() {
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-8 text-text-secondary bg-white rounded-[20px] border border-dashed border-gray-200">
-                        <p>尚無最近消費</p>
+                    <div className="flex flex-col items-center justify-center py-10 text-center bg-white rounded-[20px] border border-dashed border-gray-200">
+                        <div className="w-32 h-32 mb-4 animate-bounce-slow">
+                            <img src="/assets/empty_expenses.png" alt="No expenses" className="w-full h-full object-contain opacity-90 mix-blend-multiply" />
+                        </div>
+                        <p className="text-text font-bold text-lg">尚無今日消費</p>
+                        <p className="text-text-secondary text-sm mt-1">享受當下的美好時刻吧！</p>
                     </div>
                 )}
             </div>

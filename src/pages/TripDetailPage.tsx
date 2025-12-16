@@ -100,11 +100,16 @@ export function TripDetailPage() {
                                 className="w-full h-full object-cover opacity-80"
                             />
                             {/* Gradient Overlay only for image */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
                         </>
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1A8C56] to-[#0D4428]">
-                            <span className="text-6xl opacity-20 blur-[1px]">✈️</span>
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1A8C56] to-[#0D4428] relative overflow-hidden">
+                            <div className="absolute inset-0 bg-black/10" />
+                            <img
+                                src="/assets/travel_hero.png"
+                                alt="Default Banner"
+                                className="w-64 h-64 object-contain opacity-40 drop-shadow-2xl animate-bounce-slow"
+                            />
                         </div>
                     )}
 
@@ -117,14 +122,14 @@ export function TripDetailPage() {
                         }}
                     >
                         {trip.country && (
-                            <div className="text-white/80 text-xs font-bold mb-2 uppercase tracking-widest bg-black/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 mx-auto">
+                            <div className="text-white text-xs font-bold mb-2 uppercase tracking-widest bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 mx-auto">
                                 📍 {trip.country}
                             </div>
                         )}
-                        <h1 className="font-heading font-black text-4xl tracking-tight w-full text-white drop-shadow-lg">
+                        <h1 className="font-heading font-black text-4xl tracking-tight w-full text-white drop-shadow-xl shadow-black/50">
                             {trip.name}
                         </h1>
-                        <p className="text-sm font-medium mt-2 text-white/70 drop-shadow-md">
+                        <p className="text-sm font-bold mt-2 text-white/90 drop-shadow-md">
                             {format(trip.startDate, 'yyyy.MM.dd')} — {format(trip.endDate, 'yyyy.MM.dd')}
                         </p>
                     </div>
@@ -227,26 +232,7 @@ export function TripDetailPage() {
 
                                 {/* Widgets Area */}
                                 <div className="px-6 grid grid-cols-1 gap-4">
-                                    {/* Companions Summary Widget */}
-                                    <div
-                                        onClick={() => setShowInvite(true)}
-                                        className="bg-white p-4 rounded-[20px] flex gap-3 items-center border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
-                                    >
-                                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex-shrink-0 flex items-center justify-center">
-                                            <Users size={20} />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h4 className="font-bold text-text text-sm">旅伴</h4>
-                                            <p className="text-xs text-text-secondary mt-0.5">
-                                                {companions.length > 0
-                                                    ? `${companions.length} 位旅伴：${companions.map(c => c.name).join(', ')}`
-                                                    : '還沒有加入旅伴'}
-                                            </p>
-                                        </div>
-                                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
-                                            <Plus size={16} />
-                                        </div>
-                                    </div>
+
 
                                     {/* Exchange Rate Widget */}
                                     {trip.currency !== 'TWD' && (
@@ -287,16 +273,17 @@ export function TripDetailPage() {
                                                 .reduce((sum, e) => sum + e.amount, 0);
 
                                             return (
-                                                <div key={date} className="pb-2">
-                                                    <div className="flex justify-between items-end mb-2 sticky top-0 bg-white/95 backdrop-blur-sm py-4 px-6 z-10 border-b border-gray-50 transition-all">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-1 h-3 bg-primary rounded-full"></div>
-                                                            <h4 className="font-bold text-text text-sm">
-                                                                {format(new Date(date), 'MM/dd EEEE')}
-                                                            </h4>
-                                                        </div>
+                                                <div key={date} className="pb-8">
+                                                    {/* Sticky Date Header - Clean & Modern */}
+                                                    <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md py-4 px-5 mb-2 flex justify-between items-center transition-all">
+                                                        <h4 className="font-heading font-bold text-xl text-text flex items-center gap-2">
+                                                            {format(new Date(date), 'MM.dd')}
+                                                            <span className="text-sm font-medium text-text-secondary uppercase tracking-wider bg-gray-100 px-2 py-0.5 rounded-md">
+                                                                {format(new Date(date), 'EEE')}
+                                                            </span>
+                                                        </h4>
                                                         <div className="text-right">
-                                                            <span className="text-sm font-bold text-text bg-gray-50 px-2 py-1 rounded inline-block">
+                                                            <span className="text-xs font-bold text-text-secondary bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-full">
                                                                 {new Intl.NumberFormat('en-US', {
                                                                     style: 'currency',
                                                                     currency: predominantCurrency,
@@ -306,25 +293,37 @@ export function TripDetailPage() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="space-y-1">
+                                                    {/* Content Card - Wrapped in a unified block */}
+                                                    <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50 mx-5">
                                                         {dayExpenses.map(expense => (
                                                             <div
                                                                 key={expense.id}
                                                                 onClick={() => {
                                                                     navigate(`/trips/${trip.id}/add-expense?expenseId=${expense.id}`);
                                                                 }}
-                                                                className="flex justify-between items-center group relative py-3 px-6 active:bg-gray-50 transition-colors cursor-pointer"
+                                                                className="flex justify-between items-center group relative p-5 hover:bg-gray-50/80 active:bg-gray-100 transition-colors cursor-pointer"
                                                             >
-                                                                <div>
-                                                                    <div className="font-bold text-text text-base">{expense.merchant}</div>
-                                                                    <div className="text-[10px] text-text-secondary flex items-center gap-1 font-medium mt-0.5">
-                                                                        {format(new Date(expense.date), 'HH:mm')}
-                                                                        {expense.category && ` · ${expense.category}`}
-                                                                        {expense.items && expense.items.length > 0 && ` · ${expense.items.length} 項商品`}
+                                                                <div className="flex items-center gap-4">
+                                                                    {/* Category Icon Integration */}
+                                                                    <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-xl shrink-0">
+                                                                        {expense.category === 'food' ? '🍜' :
+                                                                            expense.category === 'transport' ? '🚌' :
+                                                                                expense.category === 'accommodation' ? '🏨' :
+                                                                                    expense.category === 'shopping' ? '🛍️' : '🏷️'}
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="font-bold text-text text-[15px] leading-tight mb-1">{expense.merchant}</div>
+                                                                        <div className="text-[11px] text-text-secondary flex items-center gap-1.5 font-medium">
+                                                                            <span className="bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded text-[10px]">
+                                                                                {format(new Date(expense.date), 'HH:mm')}
+                                                                            </span>
+                                                                            {expense.items && expense.items.length > 0 && <span>{expense.items.length} items</span>}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    <span className="font-heading font-black text-text text-lg">
+
+                                                                <div className="flex items-center gap-3 pl-2">
+                                                                    <span className="font-heading font-bold text-text text-base">
                                                                         {new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency }).format(expense.amount)}
                                                                     </span>
                                                                     <button
@@ -332,7 +331,7 @@ export function TripDetailPage() {
                                                                             e.stopPropagation();
                                                                             handleDeleteExpense(expense.id, expense.merchant);
                                                                         }}
-                                                                        className="icon-btn-danger -mr-2"
+                                                                        className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all -mr-2"
                                                                         title="刪除"
                                                                     >
                                                                         <Trash2 size={16} />

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, Bell, Globe, Database, HelpCircle, Shield, ChevronRight, LogOut, Edit2, Check, Camera } from 'lucide-react';
 import { useStorage } from '../context/StorageContext';
 
 const PRESET_AVATARS = ['🦄', '🐼', '🦊', '🐱', '🐶', '🦁', '🐯', '🐨', '🐷'];
 
 export function SettingsPage() {
+    const navigate = useNavigate();
     const { settings, updateSettings } = useStorage();
     const [isEditing, setIsEditing] = useState(false);
 
@@ -45,7 +46,7 @@ export function SettingsPage() {
             </header>
 
             {/* Profile Section */}
-            <div className="bg-white rounded-[24px] p-6 shadow-sm transition-all duration-300">
+            <div className="bg-white rounded-[20px] p-6 border border-gray-200 transition-all duration-300">
                 <div className="flex justify-between items-start mb-2">
                     <h2 className="text-lg font-bold text-text-secondary">基本資料</h2>
                     <button
@@ -133,7 +134,7 @@ export function SettingsPage() {
             <div className="space-y-4">
                 <section>
                     <h3 className="px-2 mb-2 text-xs font-bold text-text-secondary uppercase tracking-wider">一般設定</h3>
-                    <div className="bg-white rounded-[24px] overflow-hidden shadow-sm">
+                    <div className="bg-white rounded-[20px] overflow-hidden border border-gray-200">
                         <Link to="/settings/language">
                             <SettingItem icon={Globe} label="語言" value={settings.language === 'en' ? 'English' : settings.language === 'ja' ? '日本語' : '繁體中文'} />
                         </Link>
@@ -148,7 +149,7 @@ export function SettingsPage() {
 
                 <section>
                     <h3 className="px-2 mb-2 text-xs font-bold text-text-secondary uppercase tracking-wider">分帳</h3>
-                    <div className="bg-white rounded-[24px] overflow-hidden shadow-sm">
+                    <div className="bg-white rounded-[20px] overflow-hidden border border-gray-200">
                         <Link to="/settings/companions">
                             <SettingItem icon={User} label="常用旅伴" value={settings.frequentCompanions?.length ? `${settings.frequentCompanions.length} 位` : undefined} />
                         </Link>
@@ -157,7 +158,7 @@ export function SettingsPage() {
 
                 <section>
                     <h3 className="px-2 mb-2 text-xs font-bold text-text-secondary uppercase tracking-wider">關於 Nori</h3>
-                    <div className="bg-white rounded-[24px] overflow-hidden shadow-sm">
+                    <div className="bg-white rounded-[20px] overflow-hidden border border-gray-200">
                         <SettingItem icon={HelpCircle} label="意見回饋" />
                         <SettingItem icon={Shield} label="隱私權政策" />
                         <div className="p-4 flex justify-between items-center text-sm font-medium text-text-secondary bg-gray-50/50">
@@ -168,7 +169,10 @@ export function SettingsPage() {
                 </section>
             </div>
 
-            <button className="w-full py-4 text-red-500 font-bold bg-red-50 rounded-[20px] flex items-center justify-center gap-2 mt-4 active:scale-95 transition-transform">
+            <button
+                onClick={() => navigate('/logout')}
+                className="w-full py-4 text-red-500 font-bold bg-red-50 rounded-[20px] flex items-center justify-center gap-2 mt-4 active:scale-95 transition-transform"
+            >
                 <LogOut size={20} />
                 登出帳號
             </button>

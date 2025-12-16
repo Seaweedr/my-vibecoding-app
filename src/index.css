@@ -261,3 +261,16 @@ input[type="date"]::-webkit-clear-button,
 input[type="datetime-local"]::-webkit-clear-button {
   display: none;
 }
+/* Helper Animation for Illustrations */
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(-5px);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 4s ease-in-out infinite;
+}
