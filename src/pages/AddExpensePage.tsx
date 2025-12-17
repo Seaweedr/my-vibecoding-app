@@ -35,6 +35,8 @@ export function AddExpensePage() {
     // Check for passed state image (ID preferred, or raw base64 fallback)
     const passedImageId = location.state && (location.state as any).scannedImageId;
     const passedRawImage = location.state && (location.state as any).scannedImage;
+    const passedScanResult = location.state && (location.state as any).scanResult;
+    const passedReceiptImage = location.state && (location.state as any).receiptImage;
 
     const mode = searchParams.get('mode') || 'manual';
 
@@ -67,6 +69,7 @@ export function AddExpensePage() {
     const [items, setItems] = useState<ExpenseItem[]>(existingExpense?.items || []);
 
     const [isScanning, setIsScanning] = useState(false); // UI state for OCR loading
+    const [ocrProcessed, setOcrProcessed] = useState(false); // Track if OCR has been processed
 
     const dateInputRef = useRef<HTMLInputElement>(null);
     const companions = useStorage().getTripCompanions(trip?.id || '');
@@ -96,14 +99,43 @@ export function AddExpensePage() {
         loadImages();
     }, [imageIds]);
 
-    // Handle initial passed image
+    // Handle initial passed image and OCR result
     useEffect(() => {
-        const initPassedImage = async () => {
-            if (!isEditMode && imageIds.length === 0) {
-                if (passedImageId) {
+        const initPassedData = async () => {
+            if (!isEditMode && !ocrProcessed) {
+                // Handle passed OCR result first
+                if (passedScanResult) {
+                    console.log('Using passed OCR result:', passedScanResult);
+
+                    if (passedScanResult.total) {
+                        setAmount(passedScanResult.total.toString());
+                    }
+                    if (passedScanResult.merchant) {
+                        setMerchant(passedScanResult.merchant);
+                    }
+                    if (passedScanResult.items && passedScanResult.items.length > 0) {
+                        const newItems = passedScanResult.items.map((i: any) => ({
+                            id: crypto.randomUUID(),
+                            name: i.name,
+                            amount: i.amount
+                        }));
+                        setItems(newItems);
+                    }
+                    setOcrProcessed(true);
+                }
+
+                // Handle passed receipt image
+                if (passedReceiptImage && imageIds.length === 0) {
+                    try {
+                        const id = await saveImageToDB(passedReceiptImage);
+                        setImageIds([id]);
+                    } catch (e) {
+                        console.error("Failed to save receipt image", e);
+                    }
+                } else if (passedImageId && imageIds.length === 0) {
                     // Clean ID passed from BottomNav
                     setImageIds([passedImageId]);
-                } else if (passedRawImage) {
+                } else if (passedRawImage && imageIds.length === 0) {
                     // Legacy/Fallback: Raw base64 passed
                     try {
                         const id = await saveImageToDB(passedRawImage);
@@ -114,14 +146,14 @@ export function AddExpensePage() {
                 }
             }
         };
-        initPassedImage();
-    }, [passedImageId, passedRawImage, isEditMode]);
+        initPassedData();
+    }, [passedImageId, passedRawImage, passedScanResult, passedReceiptImage, isEditMode, ocrProcessed]);
 
-    // OCR Logic
+    // OCR Logic - Only run if no passed scan result
     useEffect(() => {
         const performOCR = async () => {
-            // Only scan if: in scan mode, not editing existing, we have images, not already scanning, and no items yet
-            if (mode === 'scan' && !isEditMode && displayImages.length > 0 && !isScanning && items.length === 0 && amount === '') {
+            // Only scan if: in scan mode, not editing existing, we have images, not already scanning, no items yet, and no passed result
+            if (mode === 'scan' && !isEditMode && displayImages.length > 0 && !isScanning && items.length === 0 && amount === '' && !ocrProcessed && !passedScanResult) {
                 setIsScanning(true);
                 try {
                     // Use the first image for OCR
@@ -142,6 +174,7 @@ export function AddExpensePage() {
                         }));
                         setItems(newItems);
                     }
+                    setOcrProcessed(true);
                 } catch (err) {
                     console.error("OCR Error", err);
                 } finally {
@@ -152,7 +185,7 @@ export function AddExpensePage() {
 
         // Trigger OCR only when we have the image loaded and in scan mode
         performOCR();
-    }, [mode, isEditMode, displayImages]);
+    }, [mode, isEditMode, displayImages, ocrProcessed, passedScanResult]);
 
     // Auto-sum effect for items
     useEffect(() => {

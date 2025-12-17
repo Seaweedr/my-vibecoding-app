@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useStorage } from '../context/StorageContext';
-import { Camera, Plus } from 'lucide-react';
+import { Camera, PenLine } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { useEffect, useState } from 'react';
 
@@ -109,7 +109,7 @@ export function TodayPage() {
         <div className="space-y-6 px-4 pt-6 pb-24">
             {/* Header - Logo Only, Centered */}
             <header className="flex items-center justify-center mb-6">
-                <img src="/assets/nori_logo.png" alt="Nori" className="w-12 h-12" />
+                <img src="/assets/nori_logo.png" alt="Nori" className="w-6 h-6" />
             </header>
 
             {/* 1.1 今日總覽卡片 */}
@@ -173,7 +173,7 @@ export function TodayPage() {
                     className="flex flex-col items-center justify-center gap-3 bg-white p-6 rounded-[20px] active:scale-95 transition-transform border border-gray-200"
                 >
                     <div className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/20 ring-4 ring-primary/10">
-                        <Plus size={26} />
+                        <PenLine size={26} />
                     </div>
                     <span className="font-bold text-text mt-1">手動記帳</span>
                 </Link>
