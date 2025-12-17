@@ -214,9 +214,25 @@ export function AddExpensePage() {
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!trip) return;
+
+        // Safety scan: Ensure no raw base64 images are saved to localStorage
+        const sanitizedImageIds: string[] = [];
+        for (const id of imageIds) {
+            if (id.startsWith('data:')) {
+                try {
+                    const newId = await saveImageToDB(id);
+                    sanitizedImageIds.push(newId);
+                } catch (err) {
+                    console.error("Failed to save image to DB during submit", err);
+                    // If we can't save to DB, skipping it is safer than crashing the app
+                }
+            } else {
+                sanitizedImageIds.push(id);
+            }
+        }
 
         const totalAmount = parseFloat(amount);
         const splitCount = involvedCompanionIds.length;
@@ -236,7 +252,7 @@ export function AddExpensePage() {
             note: '',
             paidBy: 'user',
             splits,
-            images: imageIds, // Store IDs
+            images: sanitizedImageIds, // Use the clean IDs
             items: items.length > 0 ? items : undefined,
         };
 
