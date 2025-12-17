@@ -107,22 +107,13 @@ export function TodayPage() {
 
     return (
         <div className="space-y-6 px-4 pt-6 pb-24">
-            <header className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <img src="/assets/nori_logo.png" alt="Nori" className="w-10 h-10 rounded-[12px]" />
-                    <div>
-                        <h1 className="text-2xl font-bold text-text font-heading tracking-tight">今日總覽</h1>
-                        <p className="text-sm text-text-secondary font-medium mt-1">
-                            {activeTrip
-                                ? activeTrip.name
-                                : format(today, 'yyyy.MM.dd EEEE')}
-                        </p>
-                    </div>
-                </div>
+            {/* Header - Logo Only, Centered */}
+            <header className="flex items-center justify-center mb-6">
+                <img src="/assets/nori_logo.png" alt="Nori" className="w-12 h-12 rounded-[16px] shadow-sm" />
             </header>
 
             {/* 1.1 今日總覽卡片 */}
-            <div className="bg-primary text-white rounded-[20px] p-6 relative overflow-hidden">
+            <div className="bg-primary text-white rounded-[24px] p-7 relative overflow-hidden shadow-xl shadow-primary/20">
                 {/* Decorative Background Image - Centered Right */}
                 <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-48 h-48 rotate-0 pointer-events-none animate-bounce-slow">
                     <img src={heroImage} alt="" className="w-full h-full object-contain" />
@@ -130,25 +121,38 @@ export function TodayPage() {
                 {/* Existing blur for extra vibe */}
                 <div className="absolute top-0 right-0 p-32 bg-white/5 rounded-full blur-3xl translate-x-10 -translate-y-10 pointer-events-none" />
 
-                <div className="relative z-10">
-                    <p className="text-primary-light font-medium text-sm mb-1">
-                        今日總花費
-                    </p>
-                    <div className="flex flex-col">
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-heading font-bold">
-                                {formatCurrency(totalInMain, mainDisplayCurrency!)} <span className="text-lg font-medium text-white/80">{mainDisplayCurrency}</span>
-                            </span>
-                        </div>
-                        {subDisplayCurrency && (
-                            <div className="mt-1 text-primary-light/80 font-medium text-sm flex items-center gap-1">
-                                <span>≈ {formatCurrency(totalInSub, subDisplayCurrency)} {subDisplayCurrency}</span>
-                            </div>
-                        )}
+                <div className="relative z-10 space-y-6">
+                    {/* Merged Header Info */}
+                    <div>
+                        <h1 className="text-3xl font-bold font-heading tracking-tight mb-1">今日總覽</h1>
+                        <p className="text-white/80 font-medium text-sm">
+                            {activeTrip
+                                ? activeTrip.name
+                                : format(today, 'yyyy.MM.dd EEEE')}
+                        </p>
                     </div>
-                    <p className="mt-4 text-sm bg-white/10 inline-block px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
-                        今日已記錄 {todaysExpenses.length} 筆
-                    </p>
+
+                    <div>
+                        <p className="text-primary-light font-bold text-xs mb-1 uppercase tracking-wide opacity-80">
+                            今日總花費
+                        </p>
+                        <div className="flex flex-col">
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-5xl font-black font-heading tracking-tight">
+                                    {formatCurrency(totalInMain, mainDisplayCurrency!)}
+                                </span>
+                                <span className="text-lg font-bold text-white/60">{mainDisplayCurrency}</span>
+                            </div>
+                            {subDisplayCurrency && (
+                                <div className="mt-1 text-primary-light/90 font-medium text-sm flex items-center gap-1">
+                                    <span>≈ {formatCurrency(totalInSub, subDisplayCurrency)} {subDisplayCurrency}</span>
+                                </div>
+                            )}
+                        </div>
+                        <p className="mt-5 text-xs bg-white/20 inline-block px-4 py-1.5 rounded-full backdrop-blur-md border border-white/10 font-medium text-white shadow-sm">
+                            今日已記錄 {todaysExpenses.length} 筆
+                        </p>
+                    </div>
                 </div>
             </div>
 
