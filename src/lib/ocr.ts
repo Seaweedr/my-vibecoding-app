@@ -7,13 +7,95 @@ export interface ScanResult {
     rawText: string;
 }
 
+// Preprocess image for better OCR results
+// 1. Resize if too large
+// 2. Grayscale
+// 3. High contrast / Threshold
+const preprocessImage = (imageSrc: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = imageSrc;
+        img.crossOrigin = "Anonymous";
+
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                resolve(imageSrc); // Fallback
+                return;
+            }
+
+            // Resize logic: Tesseract performs best on images with characters ~20-30px height.
+            // 2000px width is usually a safe bet for receipts.
+            let width = img.width;
+            let height = img.height;
+            const MAX_WIDTH = 2500;
+
+            if (width > MAX_WIDTH) {
+                height = Math.round((height * MAX_WIDTH) / width);
+                width = MAX_WIDTH;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Draw original
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Get pixel data
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            // Grayscale & Binarization (Simple Thresholding)
+            // A dynamic threshold (like Otsu) would be better, but a fixed high threshold (assuming light paper) works for many receipts.
+            const threshold = 180; // Cutoff for "white" paper
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Luminance formula
+                const gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+                // Binarize
+                // If strictly wider than threshold -> White (255), else Black (0)
+                // Inverting might be needed if dark paper, but receipts are usually white.
+                const val = gray > threshold ? 255 : 0;
+
+                // Assign back
+                data[i] = val;
+                data[i + 1] = val;
+                data[i + 2] = val;
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            resolve(canvas.toDataURL('image/jpeg', 1.0)); // Use max quality for the OCR temp image
+        };
+
+        img.onerror = (err) => {
+            console.error("OCR Preprocessing failed", err);
+            resolve(imageSrc);
+        };
+    });
+};
+
 export const scanReceipt = async (imageSrc: string): Promise<ScanResult> => {
     try {
+        console.log("Starting OCR with preprocessing...");
+        // Step 1: Optimize image for text recognition
+        const processedImage = await preprocessImage(imageSrc);
+
+        // Step 2: Recognize
         const { data: { text } } = await Tesseract.recognize(
-            imageSrc,
+            processedImage,
             'eng+chi_tra+jpn', // Support English, Traditional Chinese, and Japanese
             {
-                logger: m => console.log(m)
+                logger: m => {
+                    if (m.status === 'recognizing text') {
+                        console.log(`OCR Progress: ${(m.progress * 100).toFixed(0)}%`);
+                    }
+                }
             }
         );
 
