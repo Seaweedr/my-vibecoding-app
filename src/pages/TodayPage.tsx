@@ -113,19 +113,20 @@ export function TodayPage() {
             </header>
 
             {/* 1.1 今日總覽卡片 */}
-            <div className="bg-primary text-white rounded-[24px] p-7 relative overflow-hidden shadow-xl shadow-primary/20">
+            <div className="bg-primary text-white rounded-[24px] p-6 relative overflow-hidden shadow-xl shadow-primary/20 min-h-[200px]">
                 {/* Decorative Background Image - Centered Right */}
-                <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-48 h-48 rotate-0 pointer-events-none animate-bounce-slow">
-                    <img src={heroImage} alt="" className="w-full h-full object-contain" />
+                <div className="absolute -right-6 top-1/2 -translate-y-1/2 w-48 h-48 rotate-0 pointer-events-none z-0">
+                    <img src={heroImage} alt="" className="w-full h-full object-contain drop-shadow-lg" />
                 </div>
                 {/* Existing blur for extra vibe */}
-                <div className="absolute top-0 right-0 p-32 bg-white/5 rounded-full blur-3xl translate-x-10 -translate-y-10 pointer-events-none" />
+                <div className="absolute top-0 right-0 p-32 bg-white/5 rounded-full blur-3xl translate-x-10 -translate-y-10 pointer-events-none z-0" />
 
-                <div className="relative z-10 space-y-6">
+                {/* Content Container - Added padding-right to avoid image overlap */}
+                <div className="relative z-10 space-y-6 pr-32">
                     {/* Merged Header Info */}
                     <div>
-                        <h1 className="text-3xl font-bold font-heading tracking-tight mb-1">今日總覽</h1>
-                        <p className="text-white/80 font-medium text-sm">
+                        <h1 className="text-3xl font-bold font-heading tracking-tight mb-1 drop-shadow-md">今日總覽</h1>
+                        <p className="text-white/90 font-medium text-sm drop-shadow-sm">
                             {activeTrip
                                 ? activeTrip.name
                                 : format(today, 'yyyy.MM.dd EEEE')}
@@ -133,15 +134,15 @@ export function TodayPage() {
                     </div>
 
                     <div>
-                        <p className="text-primary-light font-bold text-xs mb-1 uppercase tracking-wide opacity-80">
+                        <p className="text-primary-light font-bold text-xs mb-1 uppercase tracking-wide opacity-90">
                             今日總花費
                         </p>
                         <div className="flex flex-col">
                             <div className="flex items-baseline gap-2">
-                                <span className="text-5xl font-black font-heading tracking-tight">
+                                <span className="text-5xl font-black font-heading tracking-tight drop-shadow-md">
                                     {formatCurrency(totalInMain, mainDisplayCurrency!)}
                                 </span>
-                                <span className="text-lg font-bold text-white/60">{mainDisplayCurrency}</span>
+                                <span className="text-lg font-bold text-white/80">{mainDisplayCurrency}</span>
                             </div>
                             {subDisplayCurrency && (
                                 <div className="mt-1 text-primary-light/90 font-medium text-sm flex items-center gap-1">
