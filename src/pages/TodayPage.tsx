@@ -109,7 +109,7 @@ export function TodayPage() {
         <div className="space-y-6 px-4 pt-6 pb-24">
             {/* Header - Logo Only, Centered */}
             <header className="flex items-center justify-center mb-6">
-                <img src="/assets/nori_logo.png" alt="Nori" className="w-12 h-12 rounded-[16px] shadow-sm" />
+                <img src="/assets/nori_logo.png" alt="Nori" className="w-12 h-12" />
             </header>
 
             {/* 1.1 今日總覽卡片 */}
@@ -122,11 +122,10 @@ export function TodayPage() {
                 <div className="absolute top-0 right-0 p-32 bg-white/5 rounded-full blur-3xl translate-x-10 -translate-y-10 pointer-events-none z-0" />
 
                 {/* Content Container - Added padding-right to avoid image overlap */}
-                <div className="relative z-10 space-y-6 pr-32">
-                    {/* Merged Header Info */}
+                <div className="relative z-10 space-y-4 pr-32">
+                    {/* Date/Trip Info */}
                     <div>
-                        <h1 className="text-3xl font-bold font-heading tracking-tight mb-1 drop-shadow-md">今日總覽</h1>
-                        <p className="text-white/90 font-medium text-sm drop-shadow-sm">
+                        <p className="text-white/95 font-semibold text-sm drop-shadow-sm">
                             {activeTrip
                                 ? activeTrip.name
                                 : format(today, 'yyyy.MM.dd EEEE')}
@@ -134,15 +133,15 @@ export function TodayPage() {
                     </div>
 
                     <div>
-                        <p className="text-primary-light font-bold text-xs mb-1 uppercase tracking-wide opacity-90">
+                        <p className="text-primary-light font-semibold text-xs mb-2 uppercase tracking-wide opacity-90">
                             今日總花費
                         </p>
                         <div className="flex flex-col">
                             <div className="flex items-baseline gap-2">
-                                <span className="text-5xl font-black font-heading tracking-tight drop-shadow-md">
+                                <span className="text-4xl font-bold font-heading tracking-tight drop-shadow-md">
                                     {formatCurrency(totalInMain, mainDisplayCurrency!)}
                                 </span>
-                                <span className="text-lg font-bold text-white/80">{mainDisplayCurrency}</span>
+                                <span className="text-base font-semibold text-white/80">{mainDisplayCurrency}</span>
                             </div>
                             {subDisplayCurrency && (
                                 <div className="mt-1 text-primary-light/90 font-medium text-sm flex items-center gap-1">

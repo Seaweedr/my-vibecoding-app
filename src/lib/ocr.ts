@@ -12,7 +12,7 @@ export interface ScanResult {
 // 2. Grayscale
 // 3. High contrast / Threshold
 const preprocessImage = (imageSrc: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const img = new Image();
         img.src = imageSrc;
         img.crossOrigin = "Anonymous";
