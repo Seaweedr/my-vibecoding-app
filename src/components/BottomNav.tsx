@@ -47,8 +47,8 @@ export function BottomNav() {
     ];
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 w-full bg-surface/90 backdrop-blur-md border-t border-black/5 pb-safe pt-2 px-2 shadow-lg transition-all">
-            <div className="flex justify-between items-center max-w-lg mx-auto">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 w-full bg-surface/90 backdrop-blur-md border-t border-black/5 pb-safe px-2 shadow-lg transition-all">
+            <div className="flex justify-between items-center max-w-lg mx-auto py-2 pb-2">
                 {tabs.map((tab) => {
                     if (tab.isAction) {
                         return (
