@@ -181,10 +181,7 @@ export const scanReceipt = async (imageSrc: string): Promise<ScanResult> => {
                     if (m.status === 'recognizing text') {
                         console.log(`OCR Progress: ${(m.progress * 100).toFixed(0)}%`);
                     }
-                },
-                // Optimize for receipt text
-                tessedit_pageseg_mode: Tesseract.PSM.AUTO,
-                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz一二三四五六七八九十百千萬億.,/$￥¥NT- ',
+                }
             }
         );
 
@@ -209,15 +206,23 @@ const parseReceiptText = (text: string): ScanResult => {
         'total', 'subtotal', 'amount', '合計', '小計', '總計', '税', '稅',
         'cash', 'change', 'tax', 'visa', 'mastercard', 'credit', 'debit',
         'thank', 'invoice', 'receipt', 'date', 'time', 'tel', 'phone',
-        'address', 'welcome', 'service', 'discount', '找零', '現金', '信用卡'
+        'address', 'welcome', 'service', 'discount', '找零', '現金', '信用卡',
+        'qty', 'quantity', '數量', '数量', 'price', '單價', '单价'
     ];
 
     const totalKeywords = [
-        'total', 'amount', 'grand', 'due', 'sum', 'balance',
-        '合計', '總計', '應付', '金額', '总计', '应付'
+        // 英文
+        'total', 'amount', 'grand', 'due', 'sum', 'balance', 'pay',
+        // 繁體中文
+        '合計', '總計', '應付', '金額', '總金額', '發票金額', '總共', '共計',
+        // 簡體中文
+        '总计', '应付', '总金额', '发票金额', '总共', '共计'
     ];
 
-    const subtotalKeywords = ['subtotal', 'sub-total', '小計', '小计'];
+    const subtotalKeywords = [
+        'subtotal', 'sub-total', 'sub total',
+        '小計', '小计', '未稅', '未税'
+    ];
 
     let maxAmount = 0;
     let subtotal = 0;
