@@ -25,10 +25,12 @@ export const initDB = async () => {
     });
 };
 
+import { v4 as uuidv4 } from 'uuid';
+
 // Save image to IDB
 export const saveImageToDB = async (base64Data: string): Promise<string> => {
     const db = await initDB();
-    const id = crypto.randomUUID();
+    const id = uuidv4();
     await db.put(STORE_NAME, {
         id,
         data: base64Data,

@@ -8,6 +8,7 @@ import { format, isValid } from 'date-fns';
 import { compressImage } from '../lib/imageUtils';
 import { scanReceipt } from '../lib/ocr';
 import { saveImageToDB, getImageFromDB } from '../lib/db';
+import { v4 as uuidv4 } from 'uuid';
 
 const CATEGORIES: { id: ExpenseCategory; label: string; icon: any }[] = [
     { id: 'food', label: '餐飲', icon: Coffee },
@@ -143,7 +144,7 @@ export function AddExpensePage() {
                     }
                     if (passedScanResult.items && passedScanResult.items.length > 0) {
                         const newItems = passedScanResult.items.map((i: any) => ({
-                            id: crypto.randomUUID(),
+                            id: uuidv4(),
                             name: i.name,
                             amount: i.amount
                         }));
@@ -207,7 +208,7 @@ export function AddExpensePage() {
                     }
                     if (result.items.length > 0) {
                         const newItems = result.items.map(i => ({
-                            id: crypto.randomUUID(),
+                            id: uuidv4(),
                             name: i.name,
                             amount: i.amount
                         }));
@@ -236,7 +237,7 @@ export function AddExpensePage() {
 
     const handleAddItem = () => {
         const newItem: ExpenseItem = {
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name: '',
             amount: 0
         };

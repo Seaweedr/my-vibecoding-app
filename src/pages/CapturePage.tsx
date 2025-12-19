@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Zap, Loader2 } from 'lucide-react';
+import { X, Zap, Loader2, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStorage } from '../context/StorageContext';
 import { scanReceipt, type ScanResult } from '../lib/ocr';
@@ -229,13 +229,15 @@ export function CapturePage() {
                 <button
                     onClick={handleCapture}
                     disabled={!!error || isScanning}
-                    className="w-20 h-20 bg-white rounded-full border-4 border-gray-300 shadow-lg active:scale-95 transition-transform flex items-center justify-center relative disabled:opacity-50"
+                    className="relative active:scale-95 transition-transform disabled:opacity-50 group"
                 >
-                    {isScanning ? (
-                        <Loader2 size={32} className="text-black animate-spin" />
-                    ) : (
-                        <div className="w-16 h-16 bg-white rounded-full border-2 border-black" />
-                    )}
+                    <div className="w-20 h-20 bg-primary text-white rounded-full flex items-center justify-center shadow-xl shadow-primary/40 ring-4 ring-white/20 transition-all group-hover:scale-105 group-active:scale-90">
+                        {isScanning ? (
+                            <Loader2 size={36} className="text-white animate-spin" />
+                        ) : (
+                            <Camera size={36} className="text-white" />
+                        )}
+                    </div>
                 </button>
 
                 <div className="w-12 h-12" /> {/* Spacer */}

@@ -28,17 +28,8 @@ const preprocessImage = (imageSrc: string): Promise<string> => {
             // Optimal sizing for Tesseract (characters should be ~30-40px height)
             let width = img.width;
             let height = img.height;
-            const TARGET_WIDTH = 2000;
-            const MIN_WIDTH = 1000;
-
-            // Scale up small images
-            if (width < MIN_WIDTH) {
-                const scale = MIN_WIDTH / width;
-                width = MIN_WIDTH;
-                height = Math.round(height * scale);
-            }
-            // Scale down large images
-            else if (width > TARGET_WIDTH) {
+            const TARGET_WIDTH = 1500;
+            if (width > TARGET_WIDTH) {
                 height = Math.round((height * TARGET_WIDTH) / width);
                 width = TARGET_WIDTH;
             }
@@ -46,116 +37,70 @@ const preprocessImage = (imageSrc: string): Promise<string> => {
             canvas.width = width;
             canvas.height = height;
 
-            // Draw with smoothing disabled for sharper text
-            ctx.imageSmoothingEnabled = false;
+            // Step 1: Contrast & Brightness Enhancement
+            // This helps separate text from background (like wood grain)
+            ctx.filter = 'contrast(1.4) brightness(1.1) grayscale(1)';
             ctx.drawImage(img, 0, 0, width, height);
 
             // Get pixel data
             const imageData = ctx.getImageData(0, 0, width, height);
             const data = imageData.data;
 
-            // Step 1: Calculate adaptive threshold using Otsu's method (simplified)
-            const histogram = new Array(256).fill(0);
-            for (let i = 0; i < data.length; i += 4) {
-                const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
-                histogram[gray]++;
-            }
+            // Step 2: Adaptive Binarization (Localized Otsu-like)
+            // Instead of one global threshold, we analyze blocks to handle shadows
+            const BLOCK_SIZE = 40;
+            for (let y = 0; y < height; y += BLOCK_SIZE) {
+                for (let x = 0; x < width; x += BLOCK_SIZE) {
+                    const blockWidth = Math.min(BLOCK_SIZE, width - x);
+                    const blockHeight = Math.min(BLOCK_SIZE, height - y);
 
-            // Find optimal threshold
-            let sum = 0;
-            for (let i = 0; i < 256; i++) sum += i * histogram[i];
-
-            let sumB = 0;
-            let wB = 0;
-            let wF = 0;
-            let maxVariance = 0;
-            let threshold = 128;
-            const total = width * height;
-
-            for (let t = 0; t < 256; t++) {
-                wB += histogram[t];
-                if (wB === 0) continue;
-
-                wF = total - wB;
-                if (wF === 0) break;
-
-                sumB += t * histogram[t];
-                const mB = sumB / wB;
-                const mF = (sum - sumB) / wF;
-                const variance = wB * wF * (mB - mF) * (mB - mF);
-
-                if (variance > maxVariance) {
-                    maxVariance = variance;
-                    threshold = t;
-                }
-            }
-
-            // Adjust threshold for receipts (usually white background)
-            threshold = Math.max(threshold, 140);
-
-            // Step 2: Apply adaptive thresholding with noise reduction
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-
-                // Convert to grayscale
-                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-
-                // Apply threshold with slight smoothing
-                let val = gray > threshold ? 255 : 0;
-
-                // Noise reduction: if pixel is very close to threshold, check neighbors
-                if (Math.abs(gray - threshold) < 20) {
-                    const x = (i / 4) % width;
-                    const y = Math.floor((i / 4) / width);
-                    let neighborSum = 0;
-                    let neighborCount = 0;
-
-                    // Check 3x3 neighborhood
-                    for (let dy = -1; dy <= 1; dy++) {
-                        for (let dx = -1; dx <= 1; dx++) {
-                            const nx = x + dx;
-                            const ny = y + dy;
-                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                                const ni = ((ny * width) + nx) * 4;
-                                const ng = 0.299 * data[ni] + 0.587 * data[ni + 1] + 0.114 * data[ni + 2];
-                                neighborSum += ng;
-                                neighborCount++;
-                            }
+                    // Simple mean-based threshold for this block
+                    let blockSum = 0;
+                    for (let by = 0; by < blockHeight; by++) {
+                        for (let bx = 0; bx < blockWidth; bx++) {
+                            const idx = ((y + by) * width + (x + bx)) * 4;
+                            blockSum += data[idx];
                         }
                     }
-                    const avgNeighbor = neighborSum / neighborCount;
-                    val = avgNeighbor > threshold ? 255 : 0;
-                }
+                    const blockAvg = blockSum / (blockWidth * blockHeight);
+                    // Bias towards white for receipts (usually white background)
+                    const blockThreshold = blockAvg * 0.9;
 
-                data[i] = val;
-                data[i + 1] = val;
-                data[i + 2] = val;
+                    for (let by = 0; by < blockHeight; by++) {
+                        for (let bx = 0; bx < blockWidth; bx++) {
+                            const idx = ((y + by) * width + (x + bx)) * 4;
+                            const val = data[idx] > blockThreshold ? 255 : 0;
+                            data[idx] = val;
+                            data[idx + 1] = val;
+                            data[idx + 2] = val;
+                        }
+                    }
+                }
             }
 
-            // Step 3: Sharpen text edges
-            const sharpened = new Uint8ClampedArray(data);
-            const kernel = [0, -1, 0, -1, 5, -1, 0, -1, 0]; // Sharpening kernel
-
+            // Step 3: Noise Reduction (Simple Dilation/Erosion to clean grain)
+            // This removes small black specs (1-2px) from the background
+            const cleaned = new Uint8ClampedArray(data);
             for (let y = 1; y < height - 1; y++) {
                 for (let x = 1; x < width - 1; x++) {
-                    let sum = 0;
-                    for (let ky = -1; ky <= 1; ky++) {
-                        for (let kx = -1; kx <= 1; kx++) {
-                            const idx = ((y + ky) * width + (x + kx)) * 4;
-                            sum += data[idx] * kernel[(ky + 1) * 3 + (kx + 1)];
+                    const idx = (y * width + x) * 4;
+                    if (data[idx] === 0) { // Black pixel
+                        let blackNeighbors = 0;
+                        for (let dy = -1; dy <= 1; dy++) {
+                            for (let dx = -1; dx <= 1; dx++) {
+                                if (data[((y + dy) * width + (x + dx)) * 4] === 0) blackNeighbors++;
+                            }
+                        }
+                        // If pixel is isolated, make it white
+                        if (blackNeighbors < 2) {
+                            cleaned[idx] = 255;
+                            cleaned[idx + 1] = 255;
+                            cleaned[idx + 2] = 255;
                         }
                     }
-                    const idx = (y * width + x) * 4;
-                    const val = Math.max(0, Math.min(255, sum));
-                    sharpened[idx] = val;
-                    sharpened[idx + 1] = val;
-                    sharpened[idx + 2] = val;
                 }
             }
-
-            imageData.data.set(sharpened);
+            imageData.data.set(cleaned);
             ctx.putImageData(imageData, 0, 0);
 
             // Use PNG for lossless quality
@@ -200,7 +145,16 @@ export const scanReceipt = async (imageSrc: string): Promise<ScanResult> => {
 };
 
 const parseReceiptText = (text: string): ScanResult => {
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    // Clean text: remove excessive dots and dashes often found in receipts
+    const cleanLine = (line: string) => {
+        return line
+            .replace(/[.]{3,}/g, ' ') // Remove row of dots
+            .replace(/[-]{3,}/g, ' ') // Remove row of dashes
+            .replace(/[_]{3,}/g, ' ') // Remove row of underscores
+            .trim();
+    };
+
+    const lines = text.split('\n').map(l => cleanLine(l)).filter(l => l.length > 0);
     const apiResult: ScanResult = { items: [], rawText: text };
 
     // Enhanced keyword lists
@@ -209,14 +163,14 @@ const parseReceiptText = (text: string): ScanResult => {
         'cash', 'change', 'tax', 'visa', 'mastercard', 'credit', 'debit',
         'thank', 'invoice', 'receipt', 'date', 'time', 'tel', 'phone',
         'address', 'welcome', 'service', 'discount', '找零', '現金', '信用卡',
-        'qty', 'quantity', '數量', '数量', 'price', '單價', '单价'
+        'qty', 'quantity', '數量', '数量', 'price', '單價', '单价', 'wifi', '密碼', '密碥'
     ];
 
     const totalKeywords = [
         // English
-        'total', 'amount', 'grand', 'due', 'sum', 'balance', 'pay', 'charge', 'total amount',
+        'total', 'amount', 'grand', 'due', 'sum', 'balance', 'pay', 'charge', 'total amount', 'invoice amount',
         // Traditional Chinese
-        '合計', '總計', '應付', '金額', '總金額', '發票金額', '總共', '共計', '實付', '應付總額', '現收',
+        '合計', '總計', '應付', '金額', '總金額', '發票金額', '總共', '共計', '實付', '應付總額', '現收', '結帳金額',
         // Simplified Chinese
         '总计', '应付', '总金额', '发票金额', '总共', '共计', '实付', '应付金额', '总额',
         // Japanese
@@ -231,7 +185,11 @@ const parseReceiptText = (text: string): ScanResult => {
     ];
 
     const changeKeywords = [
-        'change', 'balance due', '釣り', '釣銭', '找零', '거스름돈'
+        'change', 'balance due', '釣り', '釣銭', '找零', '거스름돈', '找款'
+    ];
+
+    const cashKeywords = [
+        'cash', '現金', '现金', '現收', '现收', '現入', 'お預り'
     ];
 
     const currencySymbols: { [key: string]: string } = {
@@ -239,13 +197,15 @@ const parseReceiptText = (text: string): ScanResult => {
         'NT$': 'TWD', 'TWD': 'TWD', 'NT': 'TWD',
         '￥': 'JPY', '¥': 'JPY', '円': 'JPY', 'JPY': 'JPY',
         '₩': 'KRW', 'KRW': 'KRW', '원': 'KRW',
-        'RMB': 'CNY', 'CNY': 'CNY', '元': 'CNY'
+        'RMB': 'CNY', 'CNY': 'CNY', '元': 'CNY',
+        'HK$': 'HKD', 'HKD': 'HKD'
     };
 
     let maxAmount = 0;
     let subtotal = 0;
     let changeAmount = 0;
-    const amounts: { value: number; isTotalLine: boolean; isSubtotalLine: boolean; isChangeLine: boolean }[] = [];
+    let cashAmount = 0;
+    const amounts: { value: number; isTotalLine: boolean; isSubtotalLine: boolean; isChangeLine: boolean; isCashLine: boolean }[] = [];
 
     // Enhanced number extraction with multiple formats
     lines.forEach((line, index) => {
@@ -276,33 +236,54 @@ const parseReceiptText = (text: string): ScanResult => {
         // Try to find date
         if (!apiResult.date) {
             const datePatterns = [
-                /(\d{4})[年/-](\d{1,2})[月/-](\d{1,2})日?/,
-                /(\d{1,2})[月/-](\d{1,2})[年/-](\d{4})/,
-                /(\d{2})[/-](\d{2})[/-](\d{2})/,
-                /(令和|平成)\s*(\d+|元)年\s*(\d+)月\s*(\d+)日/
+                /(結帳時間|日期|Date|Time)\s*[:：]?\s*(\d{4}[年/-]\d{1,2}[月/-]\d{1,2}日?)/i,
+                /(令和|平成)\s*(\d+|元)年\s*(\d+)月\s*(\d+)日/,
+                /(\d{4}[年/-]\d{1,2}[月/-]\d{1,2}日?)/,
+                /(\d{1,2}[月/-]\d{1,2}[年/-]\d{4})/,
+                /(\d{2}[/-]\d{2}[/-]\d{2})/
             ];
             for (const pattern of datePatterns) {
                 const match = line.match(pattern);
                 if (match) {
-                    if (match[1] === '令和' || match[1] === '平成') {
-                        const era = match[1];
-                        const yearStr = match[2];
+                    // Check for Japanese Era
+                    const eraMatch = line.match(/(令和|平成)\s*(\d+|元)年\s*(\d+)月\s*(\d+)日/);
+                    if (eraMatch) {
+                        const era = eraMatch[1];
+                        const yearStr = eraMatch[2];
                         let year = yearStr === '元' ? 1 : parseInt(yearStr);
                         if (era === '令和') year += 2018;
                         else if (era === '平成') year += 1988;
-                        apiResult.date = `${year}-${match[3].padStart(2, '0')}-${match[4].padStart(2, '0')}`;
-                    } else if (match[1].length === 4) {
-                        // YYYY-MM-DD
-                        apiResult.date = `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
-                    } else if (match[3].length === 4) {
-                        // MM-DD-YYYY
-                        apiResult.date = `${match[3]}-${match[1].padStart(2, '0')}-${match[2].padStart(2, '0')}`;
-                    } else if (match[1].length === 2 && match[2].length === 2 && match[3].length === 2) {
-                        // YY-MM-DD
-                        const year = parseInt(match[1]) > 50 ? `19${match[1]}` : `20${match[1]}`;
-                        apiResult.date = `${year}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
+                        apiResult.date = `${year}-${eraMatch[3].padStart(2, '0')}-${eraMatch[4].padStart(2, '0')}`;
+                    } else {
+                        // Regular date matching - use the original match or find the best one
+                        const dateOnlyMatch = match[2] || match[1] || match[0];
+                        const dateParts = dateOnlyMatch.match(/(\d{4})[年/-](\d{1,2})[月/-](\d{1,2})/) ||
+                            dateOnlyMatch.match(/(\d{1,2})[月/-](\d{1,2})[年/-](\d{4})/) ||
+                            dateOnlyMatch.match(/(\d{2})[/-](\d{2})[/-](\d{2})/);
+
+                        if (dateParts) {
+                            if (dateParts[1].length === 4) {
+                                apiResult.date = `${dateParts[1]}-${dateParts[2].padStart(2, '0')}-${dateParts[3].padStart(2, '0')}`;
+                            } else if (dateParts[3].length === 4) {
+                                apiResult.date = `${dateParts[3]}-${dateParts[1].padStart(2, '0')}-${dateParts[2].padStart(2, '0')}`;
+                            } else {
+                                const year = parseInt(dateParts[1]) > 50 ? `19${dateParts[1]}` : `20${dateParts[1]}`;
+                                apiResult.date = `${year}-${dateParts[2].padStart(2, '0')}-${dateParts[3].padStart(2, '0')}`;
+                            }
+                        }
                     }
                     break;
+                }
+            }
+        }
+
+        // Try to find merchant name in first 5 lines
+        if (!apiResult.merchant && index < 5) {
+            const isHeaderInfo = !lowerLine.includes('item') && !lowerLine.includes('收據') && !lowerLine.includes('交易') && line.length > 2;
+            if (isHeaderInfo) {
+                const cleaned = line.replace(/[^a-zA-Z0-9\u4e00-\u9fa5\s]/g, '').trim();
+                if (cleaned.length >= 3 && cleaned.length < 30) {
+                    apiResult.merchant = cleaned;
                 }
             }
         }
@@ -312,7 +293,7 @@ const parseReceiptText = (text: string): ScanResult => {
         const numberPatterns = [
             /(?:NT\$?|[$￥¥₩])\s*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)/gi,
             /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)\s*(?:円|원|元)/gi,
-            /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)(?=\s*$)/g,
+            /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)(?=\s*$)/g, // Match trailing numbers (usually amount)
             /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)/g
         ];
 
@@ -341,14 +322,15 @@ const parseReceiptText = (text: string): ScanResult => {
                 return;
             }
 
-            // Determine if this is a total, subtotal, or change line
+            // Determine if this is a total, subtotal, change, or cash line
             const isTotalLine = totalKeywords.some(k => lowerLine.includes(k));
             const isSubtotalLine = subtotalKeywords.some(k => lowerLine.includes(k));
             const isChangeLine = changeKeywords.some(k => lowerLine.includes(k));
+            const isCashLine = cashKeywords.some(k => lowerLine.includes(k));
 
-            amounts.push({ value: amount, isTotalLine, isSubtotalLine, isChangeLine });
+            amounts.push({ value: amount, isTotalLine, isSubtotalLine, isChangeLine, isCashLine });
 
-            if (isTotalLine && !isChangeLine) {
+            if (isTotalLine && !isChangeLine && !isCashLine) {
                 // If we found a total line, prefer it but still validate
                 if (!apiResult.total || amount > apiResult.total) {
                     apiResult.total = amount;
@@ -357,37 +339,43 @@ const parseReceiptText = (text: string): ScanResult => {
                 subtotal = amount;
             } else if (isChangeLine) {
                 changeAmount = amount;
+            } else if (isCashLine) {
+                cashAmount = amount;
             }
 
-            if (amount > maxAmount && !isChangeLine) {
+            if (amount > maxAmount && !isChangeLine && !isCashLine) {
                 maxAmount = amount;
             }
 
             // Extract item if this looks like a product line
             const isExcluded = excludedKeywords.some(k => lowerLine.includes(k));
-            if (!isTotalLine && !isSubtotalLine && !isChangeLine && !isExcluded) {
-                // Get text before the number
-                const numPosition = line.indexOf(numStr);
-                if (numPosition > 0) {
-                    let description = line.substring(0, numPosition).trim();
+            if (!isTotalLine && !isSubtotalLine && !isChangeLine && !isCashLine && !isExcluded) {
+                // For item lines with multiple numbers (e.g. "Item 1.5oz 1 200"),
+                // the last number is usually the total for that line.
+                const lastNum = foundNumbers[foundNumbers.length - 1];
+                if (numStr === lastNum) {
+                    const numPosition = line.indexOf(numStr);
+                    if (numPosition > 0) {
+                        let description = line.substring(0, numPosition).trim();
 
-                    // Clean description
-                    description = description
-                        .replace(/^[\d\s.*-]+/, '')
-                        .replace(/[*×xX]\s*\d+\s*$/, '')
-                        .replace(/^[^a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]+/, '')
-                        .replace(/[^a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]+$/, '')
-                        .trim();
+                        // Clean description
+                        description = description
+                            .replace(/^[\d\s.*-]+/, '')
+                            .replace(/[*×xX]\s*\d+\s*$/, '')
+                            .replace(/^[^a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]+/, '')
+                            .replace(/[^a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]+$/, '')
+                            .trim();
 
-                    // Only add if description is meaningful
-                    if (description.length >= 2 && description.length <= 50) {
-                        // Check if this item already exists (avoid duplicates)
-                        const exists = apiResult.items.some(item =>
-                            item.name === description && Math.abs(item.amount - amount) < 0.01
-                        );
+                        // Only add if description is meaningful
+                        if (description.length >= 2 && description.length <= 50) {
+                            // Check if this item already exists (avoid duplicates)
+                            const exists = apiResult.items.some(item =>
+                                item.name === description && Math.abs(item.amount - amount) < 0.01
+                            );
 
-                        if (!exists) {
-                            apiResult.items.push({ name: description, amount });
+                            if (!exists) {
+                                apiResult.items.push({ name: description, amount });
+                            }
                         }
                     }
                 }
@@ -397,10 +385,10 @@ const parseReceiptText = (text: string): ScanResult => {
 
     // Smart total detection fallback
     if (!apiResult.total) {
+        // Preference 1: Subtotal exists
         if (subtotal > 0) {
-            // Check if there's a value that matches subtotal + some tax
             const possibleTotals = amounts
-                .filter(a => !a.isSubtotalLine && !a.isChangeLine && a.value >= subtotal && a.value <= subtotal * 1.3)
+                .filter(a => !a.isSubtotalLine && !a.isChangeLine && !a.isCashLine && a.value >= subtotal && a.value <= subtotal * 1.5)
                 .sort((a, b) => b.value - a.value);
 
             if (possibleTotals.length > 0) {
@@ -408,28 +396,25 @@ const parseReceiptText = (text: string): ScanResult => {
             } else {
                 apiResult.total = subtotal;
             }
-        } else if (maxAmount > 0) {
-            // Often the largest number is the total, unless it's the "received" amount or "change"
-            // If there's a change amount, the total should be (largest - change) or (second largest)
-            if (changeAmount > 0) {
-                const nonChangeAmounts = amounts
-                    .filter(a => !a.isChangeLine && a.value > changeAmount)
-                    .sort((a, b) => b.value - a.value);
-
-                if (nonChangeAmounts.length >= 2) {
-                    // One might be "received", one might be "total"
-                    // Usually total < received
-                    apiResult.total = nonChangeAmounts[1].value;
-                } else if (nonChangeAmounts.length === 1) {
-                    apiResult.total = nonChangeAmounts[0].value;
-                } else {
-                    apiResult.total = maxAmount;
-                }
-            } else {
-                apiResult.total = maxAmount;
-            }
-        } else if (apiResult.items.length > 0) {
+        }
+        // Preference 2: Cash & Change Logic (Common in TW/JP/KR)
+        else if (cashAmount > 0 && changeAmount > 0) {
+            apiResult.total = cashAmount - changeAmount;
+        }
+        // Preference 3: Max amount that isn't Cash or Change
+        else if (maxAmount > 0) {
+            apiResult.total = maxAmount;
+        }
+        else if (apiResult.items.length > 0) {
             apiResult.total = apiResult.items.reduce((sum, item) => sum + item.amount, 0);
+        }
+    }
+
+    // Final Validation: If total is caught as a massive number like a phone number, fallback
+    if (apiResult.total && apiResult.total > 1000000) {
+        const saferPossibleAmounts = amounts.filter(a => a.value < 100000 && a.value > 0);
+        if (saferPossibleAmounts.length > 0) {
+            apiResult.total = Math.max(...saferPossibleAmounts.map(a => a.value));
         }
     }
 

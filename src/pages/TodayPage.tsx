@@ -165,20 +165,20 @@ export function TodayPage() {
             <div className="grid grid-cols-2 gap-4">
                 <Link
                     to="/capture"
-                    className="flex flex-col items-center justify-center gap-3 bg-white p-6 rounded-[20px] active:scale-95 transition-transform border border-gray-200"
+                    className="flex flex-col items-center justify-center gap-3 bg-white p-6 rounded-[24px] active:scale-95 transition-all border border-gray-100 shadow-soft group"
                 >
-                    <div className="w-14 h-14 bg-accent text-white rounded-full flex items-center justify-center shadow-lg shadow-accent/20 ring-4 ring-accent/10">
-                        <Camera size={26} />
+                    <div className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/40 ring-4 ring-white transition-transform group-hover:scale-110">
+                        <Camera size={28} />
                     </div>
                     <span className="font-bold text-text mt-1">拍收據</span>
                 </Link>
 
                 <Link
                     to={activeTrip ? `/trips/${activeTrip.id}/add-expense` : "/trips"}
-                    className="flex flex-col items-center justify-center gap-3 bg-white p-6 rounded-[20px] active:scale-95 transition-transform border border-gray-200"
+                    className="flex flex-col items-center justify-center gap-3 bg-white p-6 rounded-[24px] active:scale-95 transition-all border border-gray-100 shadow-soft group"
                 >
-                    <div className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/20 ring-4 ring-primary/10">
-                        <PenLine size={26} />
+                    <div className="w-14 h-14 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-lg shadow-black/10 ring-4 ring-white transition-transform group-hover:scale-110">
+                        <PenLine size={28} />
                     </div>
                     <span className="font-bold text-text mt-1">手動記帳</span>
                 </Link>
