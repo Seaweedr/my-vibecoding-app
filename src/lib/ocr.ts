@@ -4,6 +4,8 @@ export interface ScanResult {
     items: { name: string; amount: number }[];
     total?: number;
     merchant?: string;
+    date?: string;
+    currency?: string;
     rawText: string;
     confidence?: number;
 }
@@ -172,10 +174,10 @@ export const scanReceipt = async (imageSrc: string): Promise<ScanResult> => {
         console.log("Starting enhanced OCR...");
         const processedImage = await preprocessImage(imageSrc);
 
-        // Enhanced Tesseract configuration
+        // Enhanced Tesseract configuration with CJK support
         const { data: { text, confidence } } = await Tesseract.recognize(
             processedImage,
-            'eng+chi_tra+jpn',
+            'eng+chi_tra+chi_sim+jpn+kor',
             {
                 logger: m => {
                     if (m.status === 'recognizing text') {
@@ -211,22 +213,39 @@ const parseReceiptText = (text: string): ScanResult => {
     ];
 
     const totalKeywords = [
-        // 英文
-        'total', 'amount', 'grand', 'due', 'sum', 'balance', 'pay',
-        // 繁體中文
-        '合計', '總計', '應付', '金額', '總金額', '發票金額', '總共', '共計',
-        // 簡體中文
-        '总计', '应付', '总金额', '发票金额', '总共', '共计'
+        // English
+        'total', 'amount', 'grand', 'due', 'sum', 'balance', 'pay', 'charge', 'total amount',
+        // Traditional Chinese
+        '合計', '總計', '應付', '金額', '總金額', '發票金額', '總共', '共計', '實付', '應付總額', '現收',
+        // Simplified Chinese
+        '总计', '应付', '总金额', '发票金额', '总共', '共计', '实付', '应付金额', '总额',
+        // Japanese
+        '合計', '税込み', '税込', '総計', '請求', '総額', 'お預り', 'お買上げ', '支払額', '支払',
+        // Korean
+        '합계', '총액', '결제금액', '받은금액', '총금액', '납부금액', '결제'
     ];
 
     const subtotalKeywords = [
         'subtotal', 'sub-total', 'sub total',
-        '小計', '小计', '未稅', '未税'
+        '小計', '小计', '未稅', '未税', '課稅対象', '課税'
     ];
+
+    const changeKeywords = [
+        'change', 'balance due', '釣り', '釣銭', '找零', '거스름돈'
+    ];
+
+    const currencySymbols: { [key: string]: string } = {
+        '$': 'USD', 'USD': 'USD',
+        'NT$': 'TWD', 'TWD': 'TWD', 'NT': 'TWD',
+        '￥': 'JPY', '¥': 'JPY', '円': 'JPY', 'JPY': 'JPY',
+        '₩': 'KRW', 'KRW': 'KRW', '원': 'KRW',
+        'RMB': 'CNY', 'CNY': 'CNY', '元': 'CNY'
+    };
 
     let maxAmount = 0;
     let subtotal = 0;
-    const amounts: { value: number; isTotalLine: boolean; isSubtotalLine: boolean }[] = [];
+    let changeAmount = 0;
+    const amounts: { value: number; isTotalLine: boolean; isSubtotalLine: boolean; isChangeLine: boolean }[] = [];
 
     // Enhanced number extraction with multiple formats
     lines.forEach((line, index) => {
@@ -246,10 +265,53 @@ const parseReceiptText = (text: string): ScanResult => {
             return;
         }
 
+        // Try to find currency
+        for (const [symbol, code] of Object.entries(currencySymbols)) {
+            if (line.includes(symbol)) {
+                apiResult.currency = code;
+                break;
+            }
+        }
+
+        // Try to find date
+        if (!apiResult.date) {
+            const datePatterns = [
+                /(\d{4})[年/-](\d{1,2})[月/-](\d{1,2})日?/,
+                /(\d{1,2})[月/-](\d{1,2})[年/-](\d{4})/,
+                /(\d{2})[/-](\d{2})[/-](\d{2})/,
+                /(令和|平成)\s*(\d+|元)年\s*(\d+)月\s*(\d+)日/
+            ];
+            for (const pattern of datePatterns) {
+                const match = line.match(pattern);
+                if (match) {
+                    if (match[1] === '令和' || match[1] === '平成') {
+                        const era = match[1];
+                        const yearStr = match[2];
+                        let year = yearStr === '元' ? 1 : parseInt(yearStr);
+                        if (era === '令和') year += 2018;
+                        else if (era === '平成') year += 1988;
+                        apiResult.date = `${year}-${match[3].padStart(2, '0')}-${match[4].padStart(2, '0')}`;
+                    } else if (match[1].length === 4) {
+                        // YYYY-MM-DD
+                        apiResult.date = `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
+                    } else if (match[3].length === 4) {
+                        // MM-DD-YYYY
+                        apiResult.date = `${match[3]}-${match[1].padStart(2, '0')}-${match[2].padStart(2, '0')}`;
+                    } else if (match[1].length === 2 && match[2].length === 2 && match[3].length === 2) {
+                        // YY-MM-DD
+                        const year = parseInt(match[1]) > 50 ? `19${match[1]}` : `20${match[1]}`;
+                        apiResult.date = `${year}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
+                    }
+                    break;
+                }
+            }
+        }
+
         // Enhanced number matching - supports multiple formats:
-        // 123, 1,234, 1 234, 123.45, $123, NT$123, ￥123
+        // 123, 1,234, 1 234, 123.45, $123, NT$123, ￥123, 123円
         const numberPatterns = [
-            /(?:NT\$?|[$￥¥])\s*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)/gi,
+            /(?:NT\$?|[$￥¥₩])\s*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)/gi,
+            /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)\s*(?:円|원|元)/gi,
             /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)(?=\s*$)/g,
             /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)/g
         ];
@@ -268,37 +330,42 @@ const parseReceiptText = (text: string): ScanResult => {
         // Process each number found
         foundNumbers.forEach((numStr) => {
             // Clean and parse
-            const cleaned = numStr.replace(/[NT$￥¥,\s]/g, '');
+            const cleaned = numStr.replace(/[NT$￥¥₩円원元,\s]/gi, '');
             const amount = parseFloat(cleaned);
 
             // Validation
-            if (isNaN(amount) || amount <= 0 || amount > 999999) return;
+            if (isNaN(amount) || amount <= 0 || amount > 9999999) return;
 
-            // Filter out dates and times
-            if (line.match(/\d{2,4}[-/]\d{1,2}[-/]\d{1,2}/) || line.match(/\d{1,2}:\d{2}/)) {
-                if (amount >= 2020 && amount <= 2030) return;
-                if (amount >= 1 && amount <= 31 && line.includes('/')) return;
+            // Filter out obviously non-amount numbers (like years)
+            if (amount >= 2000 && amount <= 2050 && (line.includes('/') || line.includes('.') || line.includes('-') || line.includes('年'))) {
+                return;
             }
 
-            // Determine if this is a total or subtotal line
+            // Determine if this is a total, subtotal, or change line
             const isTotalLine = totalKeywords.some(k => lowerLine.includes(k));
             const isSubtotalLine = subtotalKeywords.some(k => lowerLine.includes(k));
+            const isChangeLine = changeKeywords.some(k => lowerLine.includes(k));
 
-            amounts.push({ value: amount, isTotalLine, isSubtotalLine });
+            amounts.push({ value: amount, isTotalLine, isSubtotalLine, isChangeLine });
 
-            if (isTotalLine) {
-                apiResult.total = amount;
+            if (isTotalLine && !isChangeLine) {
+                // If we found a total line, prefer it but still validate
+                if (!apiResult.total || amount > apiResult.total) {
+                    apiResult.total = amount;
+                }
             } else if (isSubtotalLine) {
                 subtotal = amount;
+            } else if (isChangeLine) {
+                changeAmount = amount;
             }
 
-            if (amount > maxAmount) {
+            if (amount > maxAmount && !isChangeLine) {
                 maxAmount = amount;
             }
 
             // Extract item if this looks like a product line
             const isExcluded = excludedKeywords.some(k => lowerLine.includes(k));
-            if (!isTotalLine && !isSubtotalLine && !isExcluded) {
+            if (!isTotalLine && !isSubtotalLine && !isChangeLine && !isExcluded) {
                 // Get text before the number
                 const numPosition = line.indexOf(numStr);
                 if (numPosition > 0) {
@@ -308,8 +375,8 @@ const parseReceiptText = (text: string): ScanResult => {
                     description = description
                         .replace(/^[\d\s.*-]+/, '')
                         .replace(/[*×xX]\s*\d+\s*$/, '')
-                        .replace(/^[^a-zA-Z\u4e00-\u9fa5]+/, '')
-                        .replace(/[^a-zA-Z\u4e00-\u9fa5]+$/, '')
+                        .replace(/^[^a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]+/, '')
+                        .replace(/[^a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]+$/, '')
                         .trim();
 
                     // Only add if description is meaningful
@@ -331,8 +398,9 @@ const parseReceiptText = (text: string): ScanResult => {
     // Smart total detection fallback
     if (!apiResult.total) {
         if (subtotal > 0) {
+            // Check if there's a value that matches subtotal + some tax
             const possibleTotals = amounts
-                .filter(a => a.value >= subtotal && a.value <= subtotal * 1.2)
+                .filter(a => !a.isSubtotalLine && !a.isChangeLine && a.value >= subtotal && a.value <= subtotal * 1.3)
                 .sort((a, b) => b.value - a.value);
 
             if (possibleTotals.length > 0) {
@@ -341,7 +409,25 @@ const parseReceiptText = (text: string): ScanResult => {
                 apiResult.total = subtotal;
             }
         } else if (maxAmount > 0) {
-            apiResult.total = maxAmount;
+            // Often the largest number is the total, unless it's the "received" amount or "change"
+            // If there's a change amount, the total should be (largest - change) or (second largest)
+            if (changeAmount > 0) {
+                const nonChangeAmounts = amounts
+                    .filter(a => !a.isChangeLine && a.value > changeAmount)
+                    .sort((a, b) => b.value - a.value);
+
+                if (nonChangeAmounts.length >= 2) {
+                    // One might be "received", one might be "total"
+                    // Usually total < received
+                    apiResult.total = nonChangeAmounts[1].value;
+                } else if (nonChangeAmounts.length === 1) {
+                    apiResult.total = nonChangeAmounts[0].value;
+                } else {
+                    apiResult.total = maxAmount;
+                }
+            } else {
+                apiResult.total = maxAmount;
+            }
         } else if (apiResult.items.length > 0) {
             apiResult.total = apiResult.items.reduce((sum, item) => sum + item.amount, 0);
         }

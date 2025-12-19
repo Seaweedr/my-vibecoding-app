@@ -128,6 +128,19 @@ export function AddExpensePage() {
                     if (passedScanResult.merchant) {
                         setMerchant(passedScanResult.merchant);
                     }
+                    if (passedScanResult.currency) {
+                        setSelectedCurrency(passedScanResult.currency as CurrencyCode);
+                    }
+                    if (passedScanResult.date) {
+                        // OCR returns YYYY-MM-DD
+                        const parsedDate = new Date(passedScanResult.date);
+                        if (isValid(parsedDate)) {
+                            // Keep current time if possible or just use start of day
+                            const now = new Date();
+                            parsedDate.setHours(now.getHours(), now.getMinutes());
+                            setDate(format(parsedDate, "yyyy-MM-dd'T'HH:mm"));
+                        }
+                    }
                     if (passedScanResult.items && passedScanResult.items.length > 0) {
                         const newItems = passedScanResult.items.map((i: any) => ({
                             id: crypto.randomUUID(),
@@ -180,6 +193,17 @@ export function AddExpensePage() {
                     }
                     if (result.merchant) {
                         setMerchant(result.merchant);
+                    }
+                    if (result.currency) {
+                        setSelectedCurrency(result.currency as CurrencyCode);
+                    }
+                    if (result.date) {
+                        const parsedDate = new Date(result.date);
+                        if (isValid(parsedDate)) {
+                            const now = new Date();
+                            parsedDate.setHours(now.getHours(), now.getMinutes());
+                            setDate(format(parsedDate, "yyyy-MM-dd'T'HH:mm"));
+                        }
                     }
                     if (result.items.length > 0) {
                         const newItems = result.items.map(i => ({
