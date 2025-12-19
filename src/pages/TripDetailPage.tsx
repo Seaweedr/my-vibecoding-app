@@ -5,13 +5,14 @@ import { ArrowLeft, Settings, Plus, Copy, X, Clock, Receipt, Trash2, Share2, Ima
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
 import { BottomNav } from '../components/BottomNav';
+import { calculateBalances, calculateSettlements } from '../lib/settlement';
 import type { CurrencyCode } from '../types';
 
 export function TripDetailPage() {
     const { tripId } = useParams<{ tripId: string }>();
     const navigate = useNavigate();
     const { trips, getTripExpenses, deleteExpense, deleteTrip, updateTrip, getTripCompanions, addCompanion, removeCompanion, settings } = useStorage();
-    const [activeTab, setActiveTab] = useState<'overview' | 'timeline'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'balances'>('overview');
 
     // Modals State
     const [showSettings, setShowSettings] = useState(false);
@@ -204,6 +205,18 @@ export function TripDetailPage() {
                                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full mx-10" />
                             )}
                         </button>
+                        <button
+                            onClick={() => setActiveTab('balances')}
+                            className={cn(
+                                "flex-1 py-4 text-sm font-medium transition-colors relative text-center",
+                                activeTab === 'balances' ? "text-primary font-bold" : "text-text-secondary"
+                            )}
+                        >
+                            結算
+                            {activeTab === 'balances' && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full mx-10" />
+                            )}
+                        </button>
                     </div>
 
                     {/* Content Area */}
@@ -351,13 +364,99 @@ export function TripDetailPage() {
                                     </div>
                                 )}
                             </div>
-                        ) : (
+                        ) : activeTab === 'timeline' ? (
                             <div className="space-y-4">
                                 <div className="bg-surface rounded-[24px] p-6 text-center shadow-sm">
                                     <Clock size={40} className="mx-auto text-primary mb-2" />
                                     <h3 className="font-bold text-text">時光軸功能</h3>
                                     <p className="text-sm text-text-secondary mt-2">將您的收據與照片結合成時間軸故事。</p>
                                 </div>
+                            </div>
+                        ) : (
+                            <div className="px-6 pt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                {(() => {
+                                    const memberBalances = calculateBalances(expenses, companions, trip.currency);
+                                    const settlementSuggestions = calculateSettlements(memberBalances);
+
+                                    return (
+                                        <>
+                                            {/* Balances List */}
+                                            <section className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="font-heading font-black text-xl text-text">個人餘額</h3>
+                                                    <div className="text-[10px] uppercase font-black tracking-widest text-gray-400">Net Balance</div>
+                                                </div>
+                                                <div className="bg-gray-50 rounded-[24px] border border-gray-100 p-2 space-y-1">
+                                                    {memberBalances.map(mb => (
+                                                        <div key={mb.id} className="bg-white rounded-2xl p-4 flex items-center justify-between shadow-sm border border-gray-50">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={cn(
+                                                                    "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm",
+                                                                    mb.net > 0 ? "bg-green-100 text-green-600" : mb.net < 0 ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-400"
+                                                                )}>
+                                                                    {mb.name.charAt(0)}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-bold text-text">{mb.name}</div>
+                                                                    <div className="text-[10px] font-medium text-text-secondary">已付: {new Intl.NumberFormat('en-US').format(mb.paid)} | 應付: {new Intl.NumberFormat('en-US').format(mb.shouldPay)}</div>
+                                                                </div>
+                                                            </div>
+                                                            <div className={cn(
+                                                                "font-heading font-black text-sm",
+                                                                mb.net > 0 ? "text-green-500" : mb.net < 0 ? "text-red-500" : "text-gray-300"
+                                                            )}>
+                                                                {mb.net > 0 ? '+' : ''}{new Intl.NumberFormat('en-US', { style: 'currency', currency: trip.currency }).format(mb.net)}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </section>
+
+                                            {/* Settlement Suggestions */}
+                                            <section className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="font-heading font-black text-xl text-text">還款建議</h3>
+                                                    <div className="bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded-full tracking-wider">Optimized</div>
+                                                </div>
+
+                                                {settlementSuggestions.length > 0 ? (
+                                                    <div className="space-y-3">
+                                                        {settlementSuggestions.map((s, idx) => (
+                                                            <div key={idx} className="flex items-center gap-4 bg-white p-4 rounded-[24px] border border-gray-100 shadow-sm relative overflow-hidden group">
+                                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/20" />
+                                                                <div className="flex-1 text-center">
+                                                                    <div className="text-[10px] font-black text-gray-400 uppercase mb-1">From</div>
+                                                                    <div className="font-bold text-text truncate">{s.fromName}</div>
+                                                                </div>
+                                                                <div className="flex flex-col items-center gap-1 shrink-0">
+                                                                    <div className="font-black text-primary text-sm whitespace-nowrap">
+                                                                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: trip.currency }).format(s.amount)}
+                                                                    </div>
+                                                                    <ArrowLeft className="rotate-180 text-primary animate-pulse" size={20} />
+                                                                </div>
+                                                                <div className="flex-1 text-center">
+                                                                    <div className="text-[10px] font-black text-gray-400 uppercase mb-1">To</div>
+                                                                    <div className="font-bold text-text truncate">{s.toName}</div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="bg-green-50 border border-green-100 rounded-[24px] p-8 text-center space-y-2">
+                                                        <div className="text-3xl">✨</div>
+                                                        <div className="font-bold text-green-900">帳目已清！</div>
+                                                        <p className="text-xs text-green-700">大家都不互相欠錢，太棒了。</p>
+                                                    </div>
+                                                )}
+
+                                                <button className="w-full py-4 bg-gray-50 border border-dashed border-gray-300 rounded-[20px] text-xs font-black text-gray-400 hover:border-primary hover:text-primary transition-all active:scale-95 flex items-center justify-center gap-2 mt-4">
+                                                    <Share2 size={14} />
+                                                    複製結算明細分享至 LINE
+                                                </button>
+                                            </section>
+                                        </>
+                                    );
+                                })()}
                             </div>
                         )}
                     </div>

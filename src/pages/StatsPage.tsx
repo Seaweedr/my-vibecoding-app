@@ -18,12 +18,13 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function StatsPage() {
-    const { trips, expenses } = useStorage();
+    const { trips, expenses, settings } = useStorage();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
     const tripId = searchParams.get('tripId');
     const filteredTrip = tripId ? trips.find(t => t.id === tripId) : null;
+    const baseCurrency = filteredTrip?.currency || settings.homeCurrency || 'TWD';
 
     // Filter expenses if tripId is present
     const displayedExpenses = useMemo(() => {
@@ -37,24 +38,26 @@ export function StatsPage() {
     const categoryData = useMemo(() => {
         const total: Record<string, number> = {};
         displayedExpenses.forEach(e => {
-            total[e.category] = (total[e.category] || 0) + e.amount;
+            const amountInBase = convertCurrency(e.amount, e.currency, baseCurrency);
+            total[e.category] = (total[e.category] || 0) + amountInBase;
         });
         return Object.entries(total).map(([key, value]) => ({
             name: CATEGORY_LABELS[key] || key,
             value,
             originalKey: key
         }));
-    }, [displayedExpenses]);
+    }, [displayedExpenses, baseCurrency]);
 
     // Aggregate data by day (Time Series)
     const timeData = useMemo(() => {
         const daily: Record<string, number> = {};
         displayedExpenses.forEach(e => {
             const dateKey = format(e.date, 'MMM d');
-            daily[dateKey] = (daily[dateKey] || 0) + e.amount;
+            const amountInBase = convertCurrency(e.amount, e.currency, baseCurrency);
+            daily[dateKey] = (daily[dateKey] || 0) + amountInBase;
         });
         return Object.entries(daily).map(([date, amount]) => ({ date, amount }));
-    }, [displayedExpenses]);
+    }, [displayedExpenses, baseCurrency]);
 
     const totalSpend = categoryData.reduce((acc, curr) => acc + curr.value, 0);
 
@@ -130,27 +133,32 @@ export function StatsPage() {
                                                 ))}
                                             </Pie>
                                             <Tooltip
-                                                formatter={(value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TWD', maximumFractionDigits: 0 }).format(value)}
+                                                formatter={(value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: baseCurrency, maximumFractionDigits: 0 }).format(value)}
                                             />
                                         </PieChart>
                                     </ResponsiveContainer>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                        <span className="text-xs text-text-secondary font-medium">總計</span>
-                                        <span className="text-xl font-bold text-text">
-                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TWD', notation: 'compact', maximumFractionDigits: 0 }).format(totalSpend)}
+                                        <span className="text-[10px] uppercase tracking-widest text-text-secondary font-black mb-1">Total Spent</span>
+                                        <span className="text-2xl font-black text-text font-heading">
+                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: baseCurrency, notation: 'compact', maximumFractionDigits: 0 }).format(totalSpend)}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-6 w-full">
+                                <div className="grid grid-cols-2 gap-x-8 gap-y-3 mt-8 w-full">
                                     {categoryData.map((entry, index) => (
-                                        <div key={entry.name} className="flex justify-between items-center text-sm">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                                                <span className="capitalize text-text-secondary">{entry.name}</span>
+                                        <div key={entry.name} className="flex justify-between items-center group">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-bold text-text">{entry.name}</span>
+                                                    <span className="text-[10px] text-text-secondary font-medium">
+                                                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: baseCurrency, notation: 'compact', maximumFractionDigits: 0 }).format(entry.value)}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <span className="font-medium">
+                                            <div className="bg-gray-50 px-2 py-1 rounded-lg text-[10px] font-black text-primary">
                                                 {Math.round((entry.value / totalSpend) * 100)}%
-                                            </span>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -221,7 +229,7 @@ export function StatsPage() {
                                         />
                                         <YAxis hide />
                                         <Tooltip
-                                            formatter={(value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TWD', maximumFractionDigits: 0 }).format(value)}
+                                            formatter={(value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: baseCurrency, maximumFractionDigits: 0 }).format(value)}
                                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                                         />
                                         <Line

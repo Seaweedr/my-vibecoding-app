@@ -8,6 +8,8 @@ import { convertCurrency, formatCurrency, getCurrencyForCountry } from '../lib/c
 import type { CurrencyCode } from '../types';
 import { removeBackground } from '../lib/imageUtils';
 
+import { SyncIndicator } from '../components/SyncIndicator';
+
 export function TodayPage() {
     const { expenses, trips, activeTripId } = useStorage();
     const today = new Date();
@@ -99,17 +101,20 @@ export function TodayPage() {
     let totalInSub = 0;
 
     todaysExpenses.forEach(e => {
-        totalInMain += convertCurrency(e.amount, e.currency, mainDisplayCurrency!);
+        totalInMain += convertCurrency(e.amount, e.currency, mainDisplayCurrency as CurrencyCode);
         if (subDisplayCurrency) {
             totalInSub += convertCurrency(e.amount, e.currency, subDisplayCurrency);
         }
     });
 
     return (
-        <div className="space-y-6 px-4 pt-6 pb-24">
-            {/* Header - Logo Only, Centered */}
-            <header className="flex items-center justify-center mb-6">
-                <img src="/assets/nori_logo.png" alt="Nori" className="w-6 h-6" />
+        <div className="space-y-6 pb-24 px-6">
+            <header className="pt-6 flex justify-between items-start">
+                <div>
+                    <h1 className="text-3xl font-heading font-black text-text tracking-tight">Today</h1>
+                    <p className="text-sm text-text-secondary font-medium mt-1">{format(today, 'EEEE, MMM d')}</p>
+                </div>
+                <SyncIndicator />
             </header>
 
             {/* 1.1 今日總覽卡片 */}

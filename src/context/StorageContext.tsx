@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { AppData, Trip, Expense, UserSettings, Companion } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { saveImageToDB } from '../lib/db';
+import { initExchangeRates } from '../lib/currency';
 
 interface StorageContextType {
     trips: Trip[];
@@ -22,6 +23,8 @@ interface StorageContextType {
     removeCompanion: (companionId: string) => void;
     completeOnboarding: () => void;
     updateSettings: (settings: Partial<UserSettings>) => void;
+    isSyncing: boolean;
+    lastSyncedAt: Date | null;
 }
 
 const StorageContext = createContext<StorageContextType | undefined>(undefined);
@@ -64,6 +67,7 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
                         date: safeDate(e.date),
                         // Migration: Add new required fields if missing
                         paidBy: e.paidBy || 'user',
+                        splitMode: e.splitMode || 'equal',
                         splits: e.splits || [],
                     })),
                     companions: parsed.companions || [],
@@ -77,6 +81,49 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
     });
 
     const [activeTripId, setActiveTripId] = useState<string | null>(null);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(new Date());
+
+    // BroadcastChannel for cross-tab sync
+    useEffect(() => {
+        const bc = new BroadcastChannel('nori_sync');
+        bc.onmessage = (event) => {
+            if (event.data.type === 'DATA_UPDATED') {
+                console.log('Syncing data from other tab...');
+                setIsSyncing(true);
+                // In a real app, this would be a deep merge or fetch from server
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    try {
+                        const parsed = JSON.parse(stored);
+                        setData(prev => ({
+                            ...prev,
+                            ...parsed,
+                            trips: (parsed.trips || []).map((t: any) => ({ ...t, startDate: new Date(t.startDate), endDate: new Date(t.endDate) })),
+                            expenses: (parsed.expenses || []).map((e: any) => ({ ...e, date: new Date(e.date) }))
+                        }));
+                    } catch (e) { console.error(e); }
+                }
+                setTimeout(() => {
+                    setIsSyncing(false);
+                    setLastSyncedAt(new Date());
+                }, 800);
+            }
+        };
+        return () => bc.close();
+    }, []);
+
+    // Broadcast changes
+    const broadcastChange = () => {
+        const bc = new BroadcastChannel('nori_sync');
+        bc.postMessage({ type: 'DATA_UPDATED' });
+        bc.close();
+    };
+
+    // Initialize exchange rates on app start
+    useEffect(() => {
+        initExchangeRates();
+    }, []);
 
     // Migration Effect: Move heavy images from LocalStorage to IndexedDB
     useEffect(() => {
@@ -166,10 +213,12 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
     const addExpense = (expenseData: Omit<Expense, 'id'>) => {
         const newExpense: Expense = { ...expenseData, id: uuidv4() };
         setData(prev => ({ ...prev, expenses: [newExpense, ...prev.expenses] }));
+        broadcastChange();
     };
 
     const deleteExpense = (id: string) => {
         setData(prev => ({ ...prev, expenses: prev.expenses.filter(e => e.id !== id) }));
+        broadcastChange();
     };
 
     const updateExpense = (id: string, updates: Partial<Expense>) => {
@@ -177,6 +226,7 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
             ...prev,
             expenses: prev.expenses.map(e => e.id === id ? { ...e, ...updates } : e)
         }));
+        broadcastChange();
     };
 
     const getTripExpenses = (tripId: string) => {
@@ -257,7 +307,10 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
                     ...prev,
                     settings: { ...prev.settings, ...newSettings }
                 }));
-            }
+                broadcastChange();
+            },
+            isSyncing,
+            lastSyncedAt
         }}>
             {children}
         </StorageContext.Provider>

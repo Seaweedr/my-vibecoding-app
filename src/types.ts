@@ -32,6 +32,8 @@ export interface ExpenseItem {
     amount: number;
 }
 
+export type SplitMode = 'equal' | 'exact' | 'percentage' | 'shares';
+
 export interface Expense {
     id: string;
     tripId: string;
@@ -42,7 +44,8 @@ export interface Expense {
     category: ExpenseCategory;
     note?: string;
     paidBy: string; // 'user' or companion UUID. Default 'user'
-    splits: ExpenseSplit[]; // List of splits. If empty, assumed equal/default.
+    splitMode: SplitMode; // How the expense is divided
+    splits: ExpenseSplit[]; // List of splits.
     images?: string[]; // URLs for receipt or context photos
     items?: ExpenseItem[]; // Itemized list of products
 }

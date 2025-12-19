@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { useStorage } from '../context/StorageContext';
-import type { ExpenseCategory, CurrencyCode, ExpenseItem } from '../types';
+import type { ExpenseCategory, CurrencyCode, ExpenseItem, SplitMode, ExpenseSplit } from '../types';
 import { ArrowLeft, Check, Coffee, Bus, Bed, ShoppingBag, Music, MoreHorizontal, Plus, X, Clock, Camera, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format, isValid } from 'date-fns';
@@ -76,9 +76,24 @@ export function AddExpensePage() {
     const [involvedCompanionIds, setInvolvedCompanionIds] = useState<string[]>(
         existingExpense && existingExpense.splits.length > 0
             ? existingExpense.splits.map(s => s.companionId)
-            : ['user']
+            : ['user', ...companions.map(c => c.id)] // Default involvement including all
     );
-    const [showSplit, setShowSplit] = useState(involvedCompanionIds.length > 1);
+    const [paidBy, setPaidBy] = useState<string>(existingExpense?.paidBy || 'user');
+    const [splitMode, setSplitMode] = useState<SplitMode>(existingExpense?.splitMode || 'equal');
+    const [splitValues, setSplitValues] = useState<Record<string, number>>(() => {
+        if (existingExpense && existingExpense.splits.length > 0) {
+            const vals: Record<string, number> = {};
+            existingExpense.splits.forEach(s => {
+                // If percentage, we might want to recover it, but for now store amount
+                vals[s.companionId] = s.amount;
+            });
+            return vals;
+        }
+        return {};
+    });
+
+    const [showSplit, setShowSplit] = useState(false);
+    const [showPayer, setShowPayer] = useState(false);
 
     // Load display images from DB whenever imageIds change
     useEffect(() => {
@@ -260,32 +275,56 @@ export function AddExpensePage() {
                     sanitizedImageIds.push(newId);
                 } catch (err) {
                     console.error("Failed to save image to DB during submit", err);
-                    // If we can't save to DB, skipping it is safer than crashing the app
                 }
             } else {
                 sanitizedImageIds.push(id);
             }
         }
 
-        const totalAmount = parseFloat(amount);
-        const splitCount = involvedCompanionIds.length;
-        const splitAmount = totalAmount / splitCount;
+        const totalAmount = parseFloat(amount) || 0;
+        let splits: ExpenseSplit[] = [];
 
-        const splits = involvedCompanionIds.map(id => ({
-            companionId: id,
-            amount: splitAmount
-        }));
+        if (splitMode === 'equal') {
+            const splitAmount = totalAmount / involvedCompanionIds.length;
+            splits = involvedCompanionIds.map(id => ({
+                companionId: id,
+                amount: Number(splitAmount.toFixed(2))
+            }));
+        } else if (splitMode === 'exact') {
+            splits = involvedCompanionIds.map(id => ({
+                companionId: id,
+                amount: splitValues[id] || 0
+            }));
+        } else if (splitMode === 'percentage') {
+            splits = involvedCompanionIds.map(id => ({
+                companionId: id,
+                amount: Number(((splitValues[id] || 0) / 100 * totalAmount).toFixed(2))
+            }));
+        } else if (splitMode === 'shares') {
+            const totalShares = involvedCompanionIds.reduce((sum, id) => sum + (splitValues[id] || 0), 0);
+            splits = involvedCompanionIds.map(id => ({
+                companionId: id,
+                amount: totalShares > 0 ? Number(((splitValues[id] || 0) / totalShares * totalAmount).toFixed(2)) : 0
+            }));
+        }
+
+        // Handle rounding difference by adding to first person
+        const totalSplitAmount = splits.reduce((sum, s) => sum + s.amount, 0);
+        if (totalSplitAmount !== totalAmount && splits.length > 0) {
+            splits[0].amount += Number((totalAmount - totalSplitAmount).toFixed(2));
+        }
 
         const expenseData = {
             amount: totalAmount,
             currency: selectedCurrency,
             date: new Date(date),
-            merchant: merchant || 'Unknown Merchant',
+            merchant: merchant || '未分類商店',
             category,
             note: '',
-            paidBy: 'user',
+            paidBy,
+            splitMode,
             splits,
-            images: sanitizedImageIds, // Use the clean IDs
+            images: sanitizedImageIds,
             items: items.length > 0 ? items : undefined,
         };
 
@@ -577,53 +616,178 @@ export function AddExpensePage() {
                         </div>
                     </div>
 
+                    {/* Payer Section */}
+                    <div className="pt-2 border-t border-gray-100">
+                        <button
+                            type="button"
+                            onClick={() => setShowPayer(!showPayer)}
+                            className="flex items-center justify-between w-full p-2 hover:bg-gray-50 rounded-xl transition-colors"
+                        >
+                            <div className="flex flex-col items-start">
+                                <span className="text-xs font-bold text-text-secondary ml-1">付款人</span>
+                                <span className="font-bold text-text ml-1 mt-1">
+                                    {paidBy === 'user' ? '我' : (companions.find(c => c.id === paidBy)?.name || '未知')}
+                                </span>
+                            </div>
+                            <div className={cn("text-primary transition-transform", showPayer && "rotate-180")}>
+                                <ChevronDown size={20} />
+                            </div>
+                        </button>
+
+                        {showPayer && (
+                            <div className="mt-2 flex gap-2 flex-wrap p-2 bg-gray-50 rounded-xl animate-slide-down">
+                                <button
+                                    type="button"
+                                    onClick={() => { setPaidBy('user'); setShowPayer(false); }}
+                                    className={cn(
+                                        "px-4 py-2 rounded-full text-sm font-medium transition-all border",
+                                        paidBy === 'user' ? "bg-primary text-white border-primary shadow-sm" : "bg-white text-text-secondary border-gray-200"
+                                    )}
+                                >
+                                    我
+                                </button>
+                                {companions.map(c => (
+                                    <button
+                                        key={c.id}
+                                        type="button"
+                                        onClick={() => { setPaidBy(c.id); setShowPayer(false); }}
+                                        className={cn(
+                                            "px-4 py-2 rounded-full text-sm font-medium transition-all border",
+                                            paidBy === c.id ? "bg-primary text-white border-primary shadow-sm" : "bg-white text-text-secondary border-gray-200"
+                                        )}
+                                    >
+                                        {c.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     {/* Split Section */}
-                    <div className="pt-2">
+                    <div className="pt-2 border-t border-gray-100">
                         <button
                             type="button"
                             onClick={() => setShowSplit(!showSplit)}
-                            className="flex items-center justify-between w-full p-3 hover:bg-gray-50 rounded-xl transition-colors"
+                            className="flex items-center justify-between w-full p-2 hover:bg-gray-50 rounded-xl transition-colors"
                         >
-                            <span className="font-heading font-medium text-text">分攤對象</span>
-                            <span className="text-primary text-sm font-medium">{involvedCompanionIds.length > 0 ? `${involvedCompanionIds.length} 人` : '僅自己'}</span>
+                            <div className="flex flex-col items-start">
+                                <span className="text-xs font-bold text-text-secondary ml-1">分攤對象與方式</span>
+                                <span className="font-bold text-text ml-1 mt-1">
+                                    {involvedCompanionIds.length} 人 • {
+                                        splitMode === 'equal' ? '平均' :
+                                            splitMode === 'exact' ? '精確金額' :
+                                                splitMode === 'percentage' ? '百分比' : '股份'
+                                    }
+                                </span>
+                            </div>
+                            <div className={cn("text-primary transition-transform", showSplit && "rotate-180")}>
+                                <ChevronDown size={20} />
+                            </div>
                         </button>
 
                         {showSplit && (
-                            <div className="mt-3 space-y-3 animate-slide-down">
-                                <div className="flex gap-2 flex-wrap">
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleCompanion('user')}
-                                        className={cn(
-                                            "px-4 py-2 rounded-full text-sm font-medium transition-colors border",
-                                            involvedCompanionIds.includes('user')
-                                                ? "bg-primary text-white border-primary"
-                                                : "bg-gray-50 text-text-secondary border-transparent"
-                                        )}
-                                    >
-                                        我
-                                    </button>
-                                    {companions.map(c => (
+                            <div className="mt-4 space-y-6 animate-slide-down bg-gray-50/50 p-3 rounded-2xl border border-gray-100">
+                                {/* Involved People Toggle */}
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 ml-1">參與人員</label>
+                                    <div className="flex gap-2 flex-wrap">
                                         <button
-                                            key={c.id}
                                             type="button"
-                                            onClick={() => toggleCompanion(c.id)}
+                                            onClick={() => toggleCompanion('user')}
                                             className={cn(
-                                                "px-4 py-2 rounded-full text-sm font-medium transition-colors border",
-                                                involvedCompanionIds.includes(c.id)
-                                                    ? "bg-primary text-white border-primary"
-                                                    : "bg-gray-50 text-text-secondary border-transparent"
+                                                "px-4 py-2 rounded-full text-sm font-medium transition-all border",
+                                                involvedCompanionIds.includes('user')
+                                                    ? "bg-white text-primary border-primary shadow-sm"
+                                                    : "bg-transparent text-text-secondary border-gray-200 opacity-60"
                                             )}
                                         >
-                                            {c.name}
+                                            我
                                         </button>
+                                        {companions.map(c => (
+                                            <button
+                                                key={c.id}
+                                                type="button"
+                                                onClick={() => toggleCompanion(c.id)}
+                                                className={cn(
+                                                    "px-4 py-2 rounded-full text-sm font-medium transition-all border",
+                                                    involvedCompanionIds.includes(c.id)
+                                                        ? "bg-white text-primary border-primary shadow-sm"
+                                                        : "bg-transparent text-text-secondary border-gray-200 opacity-60"
+                                                )}
+                                            >
+                                                {c.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Mode Select */}
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 ml-1">分攤方式</label>
+                                    <div className="grid grid-cols-4 gap-1 p-1 bg-gray-100 rounded-xl">
+                                        {(['equal', 'exact', 'percentage', 'shares'] as SplitMode[]).map(mode => (
+                                            <button
+                                                key={mode}
+                                                type="button"
+                                                onClick={() => setSplitMode(mode)}
+                                                className={cn(
+                                                    "py-2 rounded-lg text-[10px] font-bold transition-all",
+                                                    splitMode === mode ? "bg-white text-primary shadow-sm" : "text-gray-400"
+                                                )}
+                                            >
+                                                {mode === 'equal' ? '平均' : mode === 'exact' ? '金額' : mode === 'percentage' ? '%' : '份'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Value Inputs */}
+                                <div className="space-y-3 pt-2">
+                                    {involvedCompanionIds.map(id => (
+                                        <div key={id} className="flex items-center justify-between gap-3 px-1">
+                                            <span className="text-sm font-bold text-text truncate max-w-[100px]">
+                                                {id === 'user' ? '我' : companions.find(pc => pc.id === id)?.name}
+                                            </span>
+                                            <div className="relative flex items-center flex-1">
+                                                {splitMode !== 'equal' && (
+                                                    <div className="flex items-center w-full">
+                                                        <input
+                                                            type="number"
+                                                            placeholder="0"
+                                                            className="w-full text-right bg-white p-2 rounded-xl text-sm font-bold text-primary border border-gray-200 outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+                                                            value={splitValues[id] || ''}
+                                                            onChange={(e) => {
+                                                                const val = parseFloat(e.target.value) || 0;
+                                                                setSplitValues(prev => ({ ...prev, [id]: val }));
+                                                            }}
+                                                            onFocus={(e) => e.target.select()}
+                                                        />
+                                                        <span className="ml-2 text-xs font-black text-gray-300 w-6">
+                                                            {splitMode === 'exact' ? selectedCurrency : splitMode === 'percentage' ? '%' : '份'}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {splitMode === 'equal' && (
+                                                    <div className="w-full text-right py-2 pr-8 text-sm font-bold text-primary/60 italic">
+                                                        {new Intl.NumberFormat('en-US', { style: 'decimal' }).format(Number(amount) / involvedCompanionIds.length)} {selectedCurrency}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
-                                <p className="text-xs text-text-secondary">
-                                    目前為平均分攤。每人應付 <span className="font-bold">{
-                                        amount ? new Intl.NumberFormat('en-US', { style: 'currency', currency: selectedCurrency }).format(Number(amount) / (involvedCompanionIds.length || 1)) : '-'
-                                    }</span>
-                                </p>
+
+                                {splitMode === 'percentage' && (
+                                    <div className="pt-2 px-1 flex justify-between items-center bg-gray-100/50 p-2 rounded-lg">
+                                        <span className="text-[10px] font-bold text-gray-400">總計百分比</span>
+                                        <span className={cn(
+                                            "text-xs font-black",
+                                            Math.abs(involvedCompanionIds.reduce((s, id) => s + (splitValues[id] || 0), 0) - 100) < 0.1 ? "text-green-500" : "text-red-500"
+                                        )}>
+                                            {involvedCompanionIds.reduce((s, id) => s + (splitValues[id] || 0), 0)}% / 100%
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
