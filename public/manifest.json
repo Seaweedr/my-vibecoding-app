@@ -1,0 +1,24 @@
+{
+  "name": "Nori - Travel Expense Tracker",
+  "short_name": "Nori",
+  "description": "Travel expense tracker with OCR receipt scanning",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAFAFA",
+  "theme_color": "#313131",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/nori_logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/nori_logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
