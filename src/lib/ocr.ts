@@ -10,7 +10,8 @@ export interface ScanResult {
     confidence?: number;
 }
 
-// Advanced image preprocessing for better OCR accuracy
+// Lightweight image preprocessing — only resize + mild contrast boost
+// Avoids aggressive binarization that destroys receipt text
 const preprocessImage = (imageSrc: string): Promise<string> => {
     return new Promise((resolve) => {
         const img = new Image();
@@ -25,10 +26,10 @@ const preprocessImage = (imageSrc: string): Promise<string> => {
                 return;
             }
 
-            // Optimal sizing for Tesseract (characters should be ~30-40px height)
             let width = img.width;
             let height = img.height;
             const TARGET_WIDTH = 1500;
+
             if (width > TARGET_WIDTH) {
                 height = Math.round((height * TARGET_WIDTH) / width);
                 width = TARGET_WIDTH;
@@ -37,111 +38,62 @@ const preprocessImage = (imageSrc: string): Promise<string> => {
             canvas.width = width;
             canvas.height = height;
 
-            // Step 1: Contrast & Brightness Enhancement
-            // This helps separate text from background (like wood grain)
-            ctx.filter = 'contrast(1.4) brightness(1.1) grayscale(1)';
+            // Mild contrast + brightness boost only — no binarization
+            ctx.filter = 'contrast(1.3) brightness(1.1)';
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Get pixel data
-            const imageData = ctx.getImageData(0, 0, width, height);
-            const data = imageData.data;
-
-            // Step 2: Adaptive Binarization (Localized Otsu-like)
-            // Instead of one global threshold, we analyze blocks to handle shadows
-            const BLOCK_SIZE = 40;
-            for (let y = 0; y < height; y += BLOCK_SIZE) {
-                for (let x = 0; x < width; x += BLOCK_SIZE) {
-                    const blockWidth = Math.min(BLOCK_SIZE, width - x);
-                    const blockHeight = Math.min(BLOCK_SIZE, height - y);
-
-                    // Simple mean-based threshold for this block
-                    let blockSum = 0;
-                    for (let by = 0; by < blockHeight; by++) {
-                        for (let bx = 0; bx < blockWidth; bx++) {
-                            const idx = ((y + by) * width + (x + bx)) * 4;
-                            blockSum += data[idx];
-                        }
-                    }
-                    const blockAvg = blockSum / (blockWidth * blockHeight);
-                    // Bias towards white for receipts (usually white background)
-                    const blockThreshold = blockAvg * 0.9;
-
-                    for (let by = 0; by < blockHeight; by++) {
-                        for (let bx = 0; bx < blockWidth; bx++) {
-                            const idx = ((y + by) * width + (x + bx)) * 4;
-                            const val = data[idx] > blockThreshold ? 255 : 0;
-                            data[idx] = val;
-                            data[idx + 1] = val;
-                            data[idx + 2] = val;
-                        }
-                    }
-                }
-            }
-
-            // Step 3: Noise Reduction (Simple Dilation/Erosion to clean grain)
-            // This removes small black specs (1-2px) from the background
-            const cleaned = new Uint8ClampedArray(data);
-            for (let y = 1; y < height - 1; y++) {
-                for (let x = 1; x < width - 1; x++) {
-                    const idx = (y * width + x) * 4;
-                    if (data[idx] === 0) { // Black pixel
-                        let blackNeighbors = 0;
-                        for (let dy = -1; dy <= 1; dy++) {
-                            for (let dx = -1; dx <= 1; dx++) {
-                                if (data[((y + dy) * width + (x + dx)) * 4] === 0) blackNeighbors++;
-                            }
-                        }
-                        // If pixel is isolated, make it white
-                        if (blackNeighbors < 2) {
-                            cleaned[idx] = 255;
-                            cleaned[idx + 1] = 255;
-                            cleaned[idx + 2] = 255;
-                        }
-                    }
-                }
-            }
-            imageData.data.set(cleaned);
-            ctx.putImageData(imageData, 0, 0);
-
-            // Use PNG for lossless quality
-            resolve(canvas.toDataURL('image/png'));
+            resolve(canvas.toDataURL('image/jpeg', 0.92));
         };
 
-        img.onerror = (err) => {
-            console.error("OCR Preprocessing failed", err);
+        img.onerror = () => {
             resolve(imageSrc);
         };
     });
 };
 
 export const scanReceipt = async (imageSrc: string): Promise<ScanResult> => {
-    try {
-        console.log("Starting enhanced OCR...");
-        const processedImage = await preprocessImage(imageSrc);
+    console.log("🔍 開始進行 OCR 文字辨識...");
+    const processedImage = await preprocessImage(imageSrc);
 
-        // Enhanced Tesseract configuration with CJK support
-        const { data: { text, confidence } } = await Tesseract.recognize(
-            processedImage,
-            'eng+chi_tra+chi_sim+jpn+kor',
-            {
-                logger: m => {
-                    if (m.status === 'recognizing text') {
-                        console.log(`OCR Progress: ${(m.progress * 100).toFixed(0)}%`);
+    // Try CJK + English first, fallback to English-only if it fails
+    const langOptions = ['chi_tra+eng', 'eng'];
+
+    for (const lang of langOptions) {
+        try {
+            console.log(`📦 嘗試語言包: ${lang}`);
+            const { data: { text, confidence } } = await Tesseract.recognize(
+                processedImage,
+                lang,
+                {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            console.log(`📊 OCR 辨識進度: ${(m.progress * 100).toFixed(0)}%`);
+                        }
                     }
                 }
+            );
+
+            console.log("📝 OCR 原始文字:", text);
+            console.log("✅ 辨識信心度:", `${(confidence || 0).toFixed(1)}%`);
+
+            // If confidence is too low and we haven't tried fallback yet, try next
+            if (confidence < 10 && lang !== langOptions[langOptions.length - 1]) {
+                console.log("⚠️ 信心度太低，嘗試其他語言包...");
+                continue;
             }
-        );
 
-        console.log("Raw OCR Text:", text);
-        console.log("OCR Confidence:", confidence);
-
-        const result = parseReceiptText(text);
-        result.confidence = confidence;
-        return result;
-    } catch (error) {
-        console.error("OCR Failed:", error);
-        throw error;
+            const result = parseReceiptText(text);
+            result.confidence = confidence;
+            return result;
+        } catch (error) {
+            console.warn(`⚠️ 語言包 ${lang} 失敗:`, error);
+            if (lang === langOptions[langOptions.length - 1]) {
+                throw error;
+            }
+        }
     }
+
+    throw new Error('OCR 辨識失敗');
 };
 
 const parseReceiptText = (text: string): ScanResult => {
@@ -288,12 +240,17 @@ const parseReceiptText = (text: string): ScanResult => {
             }
         }
 
-        // Enhanced number matching - supports multiple formats:
+        // 改良的數字匹配 - 支援多種格式:
         // 123, 1,234, 1 234, 123.45, $123, NT$123, ￥123, 123円
+        // 也處理 OCR 常見錯誤 (如 O 被辨識為 0, l 被辨識為 1)
         const numberPatterns = [
+            // 優先匹配帶貨幣符號的數字 (最可靠)
             /(?:NT\$?|[$￥¥₩])\s*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)/gi,
+            // 數字後接貨幣單位
             /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)\s*(?:円|원|元)/gi,
-            /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)(?=\s*$)/g, // Match trailing numbers (usually amount)
+            // 行尾的數字 (通常是金額)
+            /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)(?=\s*$)/g,
+            // 一般數字 (最後才用)
             /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)/g
         ];
 
@@ -308,10 +265,10 @@ const parseReceiptText = (text: string): ScanResult => {
 
         if (foundNumbers.length === 0) return;
 
-        // Process each number found
+        // 處理找到的每個數字
         foundNumbers.forEach((numStr) => {
-            // Clean and parse
-            const cleaned = numStr.replace(/[NT$￥¥₩円원元,\s]/gi, '');
+            // 清理並解析數字
+            const cleaned = numStr.replace(/[NT$￥¥₩円원元,\s]/gi, '').trim();
             const amount = parseFloat(cleaned);
 
             // Validation
