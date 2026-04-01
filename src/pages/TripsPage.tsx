@@ -110,7 +110,7 @@ export function TripsPage() {
                     </div>
                     <button
                         onClick={() => setShowCreateModal(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-full shadow-lg shadow-primary/20 hover:shadow-xl active:scale-95 transition-all font-bold text-sm"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-full shadow-deep hover:shadow-xl active:scale-95 transition-all font-bold text-sm"
                     >
                         <Plus size={18} />
                         新增旅程
@@ -118,12 +118,12 @@ export function TripsPage() {
                 </header>
 
                 {trips.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-8 mt-12 text-center space-y-4 border-2 border-dashed border-gray-100 rounded-3xl bg-gray-50/50">
-                        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm mb-2">
+                    <div className="flex flex-col items-center justify-center p-10 mt-12 text-center space-y-4 rounded-[28px] bg-white shadow-soft">
+                        <div className="w-20 h-20 bg-primary-light rounded-full flex items-center justify-center mb-2">
                             <span className="text-4xl">🌍</span>
                         </div>
-                        <h3 className="text-lg font-bold text-text">還沒有旅程</h3>
-                        <p className="text-text-secondary text-xs">
+                        <h3 className="text-lg font-black text-text">還沒有旅程</h3>
+                        <p className="text-text-secondary text-sm">
                             點擊右上角 + 號建立新旅程
                         </p>
                     </div>
@@ -181,8 +181,8 @@ export function TripsPage() {
                                 {coverImage ? (
                                     <img src={coverImage} alt="Cover" className="w-full h-full object-cover opacity-90" />
                                 ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white/30">
-                                        <ImageIcon size={64} className="opacity-40" />
+                                    <div className="w-full h-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white/20">
+                                        <ImageIcon size={64} className="opacity-30" />
                                     </div>
                                 )}
 
@@ -207,7 +207,7 @@ export function TripsPage() {
                                                 </button>
                                                 <button
                                                     onClick={() => setShowUrlInput(false)}
-                                                    className="flex-[2] bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+                                                    className="flex-[2] bg-accent text-white py-3 rounded-full font-bold shadow-lg shadow-accent/20 active:scale-[0.98] transition-all"
                                                 >
                                                     完成
                                                 </button>
@@ -264,14 +264,14 @@ export function TripsPage() {
 
                             <div className="p-6 space-y-8 pb-32">
                                 {/* Basic Info */}
-                                <div className="space-y-6 bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+                                <div className="space-y-6 bg-white p-6 rounded-[28px] shadow-soft">
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold text-text-secondary px-1">旅程名稱</label>
                                         <input
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
                                             placeholder="例如：東京賞櫻"
-                                            className="w-full text-2xl font-black text-text placeholder:text-gray-300 border-b-2 border-gray-100 py-2 focus:outline-none focus:border-primary transition-colors bg-transparent"
+                                            className="w-full text-2xl font-black text-text placeholder:text-gray-300 border-b-2 border-gray-100 py-2 focus:outline-none focus:border-accent transition-colors bg-transparent"
                                             autoFocus
                                         />
                                     </div>
@@ -286,7 +286,7 @@ export function TripsPage() {
                                                 type="date"
                                                 value={startDate}
                                                 onChange={(e) => setStartDate(e.target.value)}
-                                                className="w-full bg-gray-50 rounded-xl px-4 py-3 font-bold text-text outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                                className="w-full bg-gray-50 rounded-xl px-4 py-3 font-bold text-text outline-none focus:ring-2 focus:ring-accent/20 transition-all"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -298,7 +298,7 @@ export function TripsPage() {
                                                 type="date"
                                                 value={endDate}
                                                 onChange={(e) => setEndDate(e.target.value)}
-                                                className="w-full bg-gray-50 rounded-xl px-4 py-3 font-bold text-text outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                                className="w-full bg-gray-50 rounded-xl px-4 py-3 font-bold text-text outline-none focus:ring-2 focus:ring-accent/20 transition-all"
                                             />
                                         </div>
                                     </div>
@@ -318,7 +318,7 @@ export function TripsPage() {
                                                     if (detected) setCurrency(detected);
                                                 }}
                                                 placeholder="國家 / 城市"
-                                                className="w-full bg-gray-50 rounded-xl px-4 py-3 font-bold text-text outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:font-normal"
+                                                className="w-full bg-gray-50 rounded-xl px-4 py-3 font-bold text-text outline-none focus:ring-2 focus:ring-accent/20 transition-all placeholder:font-normal"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -327,7 +327,7 @@ export function TripsPage() {
                                                 <select
                                                     value={currency}
                                                     onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
-                                                    className="w-full bg-gray-50 rounded-xl px-4 py-3 font-bold text-text outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none pr-10"
+                                                    className="w-full bg-gray-50 rounded-xl px-4 py-3 font-bold text-text outline-none focus:ring-2 focus:ring-accent/20 transition-all appearance-none pr-10"
                                                 >
                                                     <option value="TWD">TWD 台幣</option>
                                                     <option value="JPY">JPY 日幣</option>
@@ -348,13 +348,13 @@ export function TripsPage() {
                                     <h3 className="text-lg font-bold text-text px-1">同行旅伴</h3>
 
                                     {/* Frequent Companions from Settings */}
-                                    <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 space-y-4">
+                                    <div className="bg-white p-6 rounded-[28px] shadow-soft space-y-4">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm font-bold text-primary flex items-center gap-2">
-                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                            <span className="text-sm font-bold text-accent flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-accent" />
                                                 常用旅伴
                                             </span>
-                                            <Link to="/settings/companions" className="text-xs font-medium text-gray-400 hover:text-primary transition-colors">
+                                            <Link to="/settings/companions" className="text-xs font-medium text-gray-400 hover:text-accent transition-colors">
                                                 管理名單
                                             </Link>
                                         </div>
@@ -371,15 +371,15 @@ export function TripsPage() {
                                                             key={friendId}
                                                             onClick={() => toggleFriend(friendId)}
                                                             className={`
-                                                                flex items-center gap-2 px-4 py-3 rounded-2xl border transition-all active:scale-95 duration-200
+                                                                flex items-center gap-2 px-4 py-3 rounded-full border transition-all active:scale-95 duration-200
                                                                 ${isSelected
-                                                                    ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20 translate-y-[-2px]'
-                                                                    : 'bg-gray-50 text-text border-transparent hover:bg-gray-100'}
+                                                                    ? 'bg-primary text-white border-primary shadow-deep translate-y-[-2px]'
+                                                                    : 'bg-primary-light text-text border-transparent hover:bg-gray-200'}
                                                             `}
                                                         >
                                                             <div className={`
                                                                 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
-                                                                ${isSelected ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}
+                                                                ${isSelected ? 'bg-white/20 text-white' : 'bg-accent/10 text-accent'}
                                                             `}>
                                                                 {friendName[0]}
                                                             </div>
@@ -392,7 +392,7 @@ export function TripsPage() {
                                                 <div className="w-full text-center py-6 text-gray-400 text-sm border-2 border-dashed border-gray-100 rounded-xl">
                                                     還沒有設定常用旅伴
                                                     <br />
-                                                    <Link to="/settings/companions" className="text-primary font-bold hover:underline mt-1 inline-block">
+                                                    <Link to="/settings/companions" className="text-accent font-bold hover:underline mt-1 inline-block">
                                                         去設定
                                                     </Link>
                                                 </div>
@@ -411,7 +411,7 @@ export function TripsPage() {
                             <button
                                 onClick={handleCreateTrip}
                                 disabled={!name}
-                                className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-lg shadow-lg shadow-primary/20 hover:bg-primary-dark hover:translate-y-[-1px] active:translate-y-[1px] active:shadow-none transition-all disabled:opacity-50 disabled:shadow-none disabled:bg-gray-200 disabled:text-gray-400"
+                                className="w-full py-4 bg-primary text-white rounded-full font-bold text-lg shadow-deep hover:bg-primary-dark hover:translate-y-[-1px] active:translate-y-[1px] active:shadow-none transition-all disabled:opacity-50 disabled:shadow-none disabled:bg-gray-200 disabled:text-gray-400"
                             >
                                 建立旅程
                             </button>

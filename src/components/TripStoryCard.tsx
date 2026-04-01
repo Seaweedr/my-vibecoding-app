@@ -127,7 +127,7 @@ export function TripStoryCard({ trip, expenses }: TripStoryCardProps) {
                 <div className="space-y-4">
                     <div>
                         <p className="text-[10px] uppercase tracking-widest text-text-secondary mb-1 font-bold">Total Spent</p>
-                        <p className="text-4xl font-heading font-bold text-primary">
+                        <p className="text-4xl font-heading font-bold text-accent">
                             {new Intl.NumberFormat('en-US', { style: 'currency', currency: trip.currency, maximumSignificantDigits: 3 }).format(totalSpend)}
                         </p>
                     </div>
@@ -142,7 +142,7 @@ export function TripStoryCard({ trip, expenses }: TripStoryCardProps) {
                             {topCategories.map(cat => {
                                 const Icon = ICONS[cat];
                                 return (
-                                    <div key={cat} className="p-1.5 bg-gray-50 rounded-lg text-primary" title={cat}>
+                                    <div key={cat} className="p-1.5 bg-gray-50 rounded-lg text-accent" title={cat}>
                                         <Icon size={16} />
                                     </div>
                                 );

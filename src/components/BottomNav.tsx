@@ -47,13 +47,13 @@ export function BottomNav() {
     ];
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 w-full bg-surface/90 backdrop-blur-md border-t border-black/5 pb-safe px-2 shadow-lg transition-all">
-            <div className="flex justify-between items-center max-w-lg mx-auto py-2 pb-2">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 w-full bg-white/95 backdrop-blur-xl border-t border-black/5 pb-safe px-2 transition-all">
+            <div className="flex justify-around items-center max-w-md mx-auto py-2 pb-2">
                 {tabs.map((tab) => {
                     if (tab.isAction) {
                         return (
                             <label key={tab.path} className="relative -top-5 flex flex-col items-center justify-center w-full h-[60px] cursor-pointer active:scale-95 transition-transform">
-                                <div className="flex items-center justify-center w-14 h-14 rounded-full shadow-lg bg-primary text-white scale-100 ring-4 ring-bg shadow-primary/40">
+                                <div className="flex items-center justify-center w-14 h-14 rounded-full shadow-deep bg-accent text-white ring-4 ring-white">
                                     <tab.icon size={28} className="text-white" />
                                 </div>
                                 <input
@@ -74,14 +74,14 @@ export function BottomNav() {
                             className={({ isActive }) =>
                                 cn(
                                     "flex flex-col items-center justify-center w-full h-[60px] transition-all duration-200 active:scale-95",
-                                    isActive ? "text-primary" : "text-text-secondary hover:text-primary/70"
+                                    isActive ? "text-accent" : "text-text-secondary hover:text-accent/70"
                                 )
                             }
                         >
                             {({ isActive }) => (
                                 <>
-                                    <tab.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-                                    <span className="text-[11px] font-medium mt-1">{tab.name}</span>
+                                    <tab.icon size={24} strokeWidth={isActive ? 2.5 : 1.5} />
+                                    <span className="text-[11px] font-bold mt-1">{tab.name}</span>
                                 </>
                             )}
                         </NavLink>

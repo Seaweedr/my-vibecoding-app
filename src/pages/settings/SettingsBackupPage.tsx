@@ -55,7 +55,7 @@ export function SettingsBackupPage() {
                     <button
                         onClick={handleSync}
                         disabled={isSyncing}
-                        className="w-full py-4 bg-primary text-white font-bold rounded-[20px] shadow-lg shadow-primary/20 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                        className="w-full py-4 bg-primary text-white font-bold rounded-[20px] shadow-deep active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
                     >
                         {isSyncing ? '同步中...' : '立即備份'}
                     </button>

@@ -143,7 +143,7 @@ export function CreateTripPage() {
                                     className={cn(
                                         "flex-shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-all border-2",
                                         selectedCompanions.includes(friend)
-                                            ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105"
+                                            ? "bg-primary text-white border-primary shadow-deep scale-105"
                                             : "bg-white text-text-secondary border-transparent hover:bg-gray-50"
                                     )}
                                 >
@@ -203,7 +203,7 @@ export function CreateTripPage() {
                 <div className="pt-4">
                     <button
                         type="submit"
-                        className="w-full py-4 bg-primary text-white font-heading font-bold rounded-[20px] shadow-lg shadow-primary/30 active:scale-95 transition-transform"
+                        className="w-full py-4 bg-primary text-white font-heading font-bold rounded-[20px] shadow-deep active:scale-95 transition-transform"
                     >
                         建立新旅程
                     </button>

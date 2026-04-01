@@ -9,7 +9,7 @@ export function SyncIndicator() {
         <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50/50 rounded-full border border-gray-100 backdrop-blur-sm transition-all duration-500">
             <div className="relative">
                 {isSyncing ? (
-                    <RefreshCw size={12} className="text-primary animate-spin" />
+                    <RefreshCw size={12} className="text-accent animate-spin" />
                 ) : (
                     <CheckCircle2 size={12} className="text-green-500" />
                 )}

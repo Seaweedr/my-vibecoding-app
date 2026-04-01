@@ -95,6 +95,7 @@ export function AddExpensePage() {
 
     const [showSplit, setShowSplit] = useState(false);
     const [showPayer, setShowPayer] = useState(false);
+    const [note, setNote] = useState(existingExpense ? existingExpense.note || '' : '');
 
     // Load display images from DB whenever imageIds change
     useEffect(() => {
@@ -345,7 +346,7 @@ export function AddExpensePage() {
             date: new Date(date),
             merchant: merchant || '未分類商店',
             category,
-            note: '',
+            note: note,
             paidBy,
             splitMode,
             splits,
@@ -420,7 +421,7 @@ export function AddExpensePage() {
                         <select
                             value={selectedCurrency}
                             onChange={(e) => setSelectedCurrency(e.target.value as CurrencyCode)}
-                            className="appearance-none bg-white border border-gray-200 rounded-2xl pl-4 pr-10 py-3 font-bold text-xl text-text cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                            className="appearance-none bg-white border border-gray-200 rounded-2xl pl-4 pr-10 py-3 font-bold text-xl text-text cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all shadow-sm"
                         >
                             {currencies.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
@@ -463,7 +464,7 @@ export function AddExpensePage() {
 
                 {/* OCR Status Banner */}
                 {isScanning && (
-                    <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center justify-center gap-2 text-primary animate-pulse">
+                    <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 flex items-center justify-center gap-2 text-accent animate-pulse">
                         <Loader2 className="animate-spin" size={18} />
                         <span className="text-sm font-bold">正在掃描收據內容...</span>
                     </div>
@@ -480,7 +481,7 @@ export function AddExpensePage() {
                             className={cn(
                                 "flex flex-col items-center justify-center p-3 rounded-xl transition-all border-2 active:scale-95 duration-200",
                                 category === cat.id
-                                    ? "bg-primary/10 border-primary text-primary"
+                                    ? "bg-accent/10 border-accent text-accent"
                                     : "bg-white border-transparent text-text-secondary hover:bg-gray-50"
                             )}
                         >
@@ -543,7 +544,7 @@ export function AddExpensePage() {
                         <input
                             type="text"
                             placeholder="例如：7-Eleven"
-                            className="w-full text-base font-medium p-3 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-300"
+                            className="w-full text-base font-medium p-3 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-gray-300"
                             value={merchant}
                             onChange={e => setMerchant(e.target.value)}
                         />
@@ -556,7 +557,7 @@ export function AddExpensePage() {
                             <button
                                 type="button"
                                 onClick={handleAddItem}
-                                className="text-primary text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-primary/10 transition-colors"
+                                className="text-accent text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-accent/10 transition-colors"
                             >
                                 <Plus size={14} />
                                 新增商品
@@ -570,7 +571,7 @@ export function AddExpensePage() {
                                         <input
                                             type="text"
                                             placeholder="商品名稱"
-                                            className="flex-1 min-w-0 bg-white p-2 rounded-lg text-sm font-medium border border-gray-100 focus:border-primary/50 outline-none transition-all placeholder:text-gray-300"
+                                            className="flex-1 min-w-0 bg-white p-2 rounded-lg text-sm font-medium border border-gray-100 focus:border-accent/50 outline-none transition-all placeholder:text-gray-300"
                                             value={item.name}
                                             onChange={(e) => handleUpdateItem(item.id, 'name', e.target.value)}
                                             autoFocus={index === items.length - 1 && item.name === ''}
@@ -578,7 +579,7 @@ export function AddExpensePage() {
                                         <input
                                             type="number"
                                             placeholder="0"
-                                            className="w-20 bg-white p-2 rounded-lg text-sm font-medium text-right border border-gray-100 focus:border-primary/50 outline-none transition-all placeholder:text-gray-300"
+                                            className="w-20 bg-white p-2 rounded-lg text-sm font-medium text-right border border-gray-100 focus:border-accent/50 outline-none transition-all placeholder:text-gray-300"
                                             value={item.amount || ''}
                                             onChange={(e) => handleUpdateItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
                                             onFocus={(e) => e.target.select()}
@@ -639,6 +640,17 @@ export function AddExpensePage() {
                                 className="absolute inset-0 w-full h-full opacity-0 z-20 pointer-events-none"
                             />
                         </div>
+                    </div>
+
+                    {/* Notes Section */}
+                    <div className="flex flex-col gap-1 pt-2 border-t border-gray-100">
+                        <label className="text-xs font-bold text-text-secondary ml-1">備註</label>
+                        <textarea
+                            placeholder="寫點什麼... (例如：幫同事代購、這餐超好吃)"
+                            className="w-full text-sm font-medium p-3 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-gray-300 min-h-[80px] resize-none"
+                            value={note}
+                            onChange={e => setNote(e.target.value)}
+                        />
                     </div>
 
                     {/* Payer Section */}
@@ -722,7 +734,7 @@ export function AddExpensePage() {
                                             className={cn(
                                                 "px-4 py-2 rounded-full text-sm font-medium transition-all border",
                                                 involvedCompanionIds.includes('user')
-                                                    ? "bg-white text-primary border-primary shadow-sm"
+                                                    ? "bg-white text-accent border-accent shadow-sm"
                                                     : "bg-transparent text-text-secondary border-gray-200 opacity-60"
                                             )}
                                         >
@@ -736,7 +748,7 @@ export function AddExpensePage() {
                                                 className={cn(
                                                     "px-4 py-2 rounded-full text-sm font-medium transition-all border",
                                                     involvedCompanionIds.includes(c.id)
-                                                        ? "bg-white text-primary border-primary shadow-sm"
+                                                        ? "bg-white text-accent border-accent shadow-sm"
                                                         : "bg-transparent text-text-secondary border-gray-200 opacity-60"
                                                 )}
                                             >
@@ -757,7 +769,7 @@ export function AddExpensePage() {
                                                 onClick={() => setSplitMode(mode)}
                                                 className={cn(
                                                     "py-2 rounded-lg text-[10px] font-bold transition-all",
-                                                    splitMode === mode ? "bg-white text-primary shadow-sm" : "text-gray-400"
+                                                    splitMode === mode ? "bg-white text-accent shadow-sm" : "text-gray-400"
                                                 )}
                                             >
                                                 {mode === 'equal' ? '平均' : mode === 'exact' ? '金額' : mode === 'percentage' ? '%' : '份'}
@@ -779,7 +791,7 @@ export function AddExpensePage() {
                                                         <input
                                                             type="number"
                                                             placeholder="0"
-                                                            className="w-full text-right bg-white p-2 rounded-xl text-sm font-bold text-primary border border-gray-200 outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+                                                            className="w-full text-right bg-white p-2 rounded-xl text-sm font-bold text-accent border border-gray-200 outline-none focus:ring-2 focus:ring-accent/10 transition-all"
                                                             value={splitValues[id] || ''}
                                                             onChange={(e) => {
                                                                 const val = parseFloat(e.target.value) || 0;
@@ -793,7 +805,7 @@ export function AddExpensePage() {
                                                     </div>
                                                 )}
                                                 {splitMode === 'equal' && (
-                                                    <div className="w-full text-right py-2 pr-8 text-sm font-bold text-primary/60 italic">
+                                                    <div className="w-full text-right py-2 pr-8 text-sm font-bold text-accent/60 italic">
                                                         {new Intl.NumberFormat('en-US', { style: 'decimal' }).format(Number(amount) / involvedCompanionIds.length)} {selectedCurrency}
                                                     </div>
                                                 )}
@@ -820,7 +832,7 @@ export function AddExpensePage() {
 
                 <button
                     type="submit"
-                    className="w-full py-4 bg-primary text-white font-heading font-bold rounded-xl shadow-lg shadow-primary/30 active:scale-95 transition-transform flex items-center justify-center gap-2"
+                    className="w-full py-4 bg-primary text-white font-heading font-bold rounded-full shadow-deep active:scale-95 transition-transform flex items-center justify-center gap-2"
                 >
                     <Check size={20} />
                     {isEditMode ? '儲存變更' : '儲存消費'}

@@ -6,7 +6,7 @@ import { Download, FileText, ArrowLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { convertCurrency } from '../lib/currency';
 
-const COLORS = ['#5C9DF2', '#FF9F76', '#10B981', '#F59E0B', '#8B5CF6', '#6B7280'];
+const COLORS = ['#0693e3', '#ff6900', '#00d084', '#fcb900', '#9b51e0', '#313131'];
 
 const CATEGORY_LABELS: Record<string, string> = {
     food: '餐飲',
@@ -106,14 +106,14 @@ export function StatsPage() {
             </header>
 
             {expenses.length === 0 ? (
-                <div className="mx-4 p-8 text-center text-text-secondary border-2 border-dashed border-gray-200 rounded-[24px]">
+                <div className="mx-4 p-10 text-center text-text-secondary bg-white rounded-[28px] shadow-soft">
                     尚無消費記錄。
                 </div>
             ) : (
                 <div className="space-y-6 px-4">
                     {/* Pie Chart */}
-                    <div className="bg-white p-6 rounded-[24px] border border-gray-200 flex flex-col items-center">
-                        <h3 className="text-lg font-heading font-semibold mb-4 w-full">消費類別分析</h3>
+                    <div className="bg-white p-7 rounded-[28px] shadow-soft flex flex-col items-center">
+                        <h3 className="text-lg font-heading font-black mb-4 w-full">消費類別分析</h3>
                         {displayedExpenses.length > 0 ? (
                             <>
                                 <div className="w-full h-64 relative">
@@ -156,7 +156,7 @@ export function StatsPage() {
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="bg-gray-50 px-2 py-1 rounded-lg text-[10px] font-black text-primary">
+                                            <div className="bg-primary-light px-2.5 py-1 rounded-full text-[10px] font-black text-accent">
                                                 {Math.round((entry.value / totalSpend) * 100)}%
                                             </div>
                                         </div>
@@ -184,7 +184,7 @@ export function StatsPage() {
                                         <Link
                                             key={trip.id}
                                             to={`/stats?tripId=${trip.id}`}
-                                            className="bg-white p-4 rounded-[20px] border border-gray-200 flex items-center justify-between group active:scale-[0.98] transition-all"
+                                            className="bg-white p-5 rounded-[24px] shadow-soft flex items-center justify-between group active:scale-[0.98] transition-all"
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
@@ -203,7 +203,7 @@ export function StatsPage() {
                                                 <span className="font-bold text-text">
                                                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TWD', maximumFractionDigits: 0 }).format(tripTotal)}
                                                 </span>
-                                                <ChevronRight size={18} className="text-gray-300 group-hover:text-primary transition-colors" />
+                                                <ChevronRight size={18} className="text-gray-300 group-hover:text-accent transition-colors" />
                                             </div>
                                         </Link>
                                     );
@@ -214,8 +214,8 @@ export function StatsPage() {
 
                     {/* Line Chart */}
                     {timeData.length > 1 && (
-                        <div className="bg-white p-6 rounded-[24px] border border-gray-200">
-                            <h3 className="text-lg font-heading font-semibold mb-4">每日消費趨勢</h3>
+                        <div className="bg-white p-7 rounded-[28px] shadow-soft">
+                            <h3 className="text-lg font-heading font-black mb-4">每日消費趨勢</h3>
                             <div className="w-full h-48">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={timeData}>
@@ -235,9 +235,9 @@ export function StatsPage() {
                                         <Line
                                             type="monotone"
                                             dataKey="amount"
-                                            stroke="#1A4D3B"
+                                            stroke="#313131"
                                             strokeWidth={3}
-                                            dot={{ fill: '#1A4D3B', r: 4, strokeWidth: 0 }}
+                                            dot={{ fill: '#313131', r: 4, strokeWidth: 0 }}
                                             activeDot={{ r: 6 }}
                                         />
                                     </LineChart>
@@ -247,21 +247,21 @@ export function StatsPage() {
                     )}
 
                     {/* Export Actions */}
-                    <div className="bg-white p-6 rounded-[24px] border border-gray-200 space-y-4">
-                        <h3 className="text-lg font-heading font-semibold">資料管理</h3>
+                    <div className="bg-white p-7 rounded-[28px] shadow-soft space-y-4">
+                        <h3 className="text-lg font-heading font-black">資料管理</h3>
                         <div className="grid grid-cols-1 gap-3">
                             <button
                                 onClick={handleExportCSV}
-                                className="flex items-center justify-center gap-2 w-full py-4 bg-gray-50 text-text font-bold rounded-[20px] active:scale-95 transition-transform"
+                                className="flex items-center justify-center gap-2 w-full py-4 bg-primary-light text-text font-bold rounded-full active:scale-95 transition-transform"
                             >
-                                <FileText size={20} className="text-primary" />
+                                <FileText size={20} className="text-accent-cyan" />
                                 匯出 CSV
                             </button>
                             <Link
                                 to="/trips"
-                                className="flex items-center justify-center gap-2 w-full py-4 bg-gray-50 text-text font-bold rounded-[20px] active:scale-95 transition-transform"
+                                className="flex items-center justify-center gap-2 w-full py-4 bg-primary-light text-text font-bold rounded-full active:scale-95 transition-transform"
                             >
-                                <Download size={20} className="text-orange-500" />
+                                <Download size={20} className="text-accent" />
                                 查看旅行故事卡
                             </Link>
                         </div>

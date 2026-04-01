@@ -117,20 +117,20 @@ export function TodayPage() {
                 <SyncIndicator />
             </header>
 
-            {/* 1.1 今日總覽卡片 */}
-            <div className="bg-primary text-white rounded-[24px] p-6 relative overflow-hidden shadow-xl shadow-primary/20 min-h-[200px]">
+            {/* 1.1 今日總覽卡片 - UZUZ style: dark surface with vivid accent */}
+            <div className="bg-primary text-white rounded-[28px] p-7 relative overflow-hidden shadow-deep min-h-[200px]">
                 {/* Decorative Background Image - Centered Right */}
-                <div className="absolute -right-6 top-1/2 -translate-y-1/2 w-48 h-48 rotate-0 pointer-events-none z-0">
-                    <img src={heroImage} alt="" className="w-full h-full object-contain drop-shadow-lg" />
+                <div className="absolute -right-6 top-1/2 -translate-y-1/2 w-48 h-48 rotate-0 pointer-events-none z-0 opacity-30">
+                    <img src={heroImage} alt="" className="w-full h-full object-contain" />
                 </div>
-                {/* Existing blur for extra vibe */}
-                <div className="absolute top-0 right-0 p-32 bg-white/5 rounded-full blur-3xl translate-x-10 -translate-y-10 pointer-events-none z-0" />
+                {/* Subtle gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/20 pointer-events-none z-0" />
 
-                {/* Content Container - Added padding-right to avoid image overlap */}
+                {/* Content Container */}
                 <div className="relative z-10 space-y-4 pr-32">
                     {/* Date/Trip Info */}
                     <div>
-                        <p className="text-white/95 font-semibold text-sm drop-shadow-sm">
+                        <p className="text-white/90 font-semibold text-sm tracking-wide">
                             {activeTrip
                                 ? activeTrip.name
                                 : format(today, 'yyyy.MM.dd EEEE')}
@@ -138,49 +138,49 @@ export function TodayPage() {
                     </div>
 
                     <div>
-                        <p className="text-primary-light font-semibold text-xs mb-2 uppercase tracking-wide opacity-90">
+                        <p className="text-white/60 font-bold text-xs mb-2 uppercase tracking-widest">
                             今日總花費
                         </p>
                         <div className="flex flex-col">
                             <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-bold font-heading tracking-tight drop-shadow-md">
+                                <span className="text-4xl font-black font-heading tracking-tight">
                                     {formatCurrency(totalInMain, mainDisplayCurrency!)}
                                 </span>
-                                <span className="text-base font-semibold text-white/80">{mainDisplayCurrency}</span>
+                                <span className="text-base font-semibold text-white/60">{mainDisplayCurrency}</span>
                             </div>
                             {subDisplayCurrency && (
-                                <div className="mt-1 text-primary-light/90 font-medium text-sm flex items-center gap-1">
+                                <div className="mt-1.5 text-accent font-bold text-sm flex items-center gap-1">
                                     <span>≈ {formatCurrency(totalInSub, subDisplayCurrency)} {subDisplayCurrency}</span>
                                 </div>
                             )}
                         </div>
-                        <p className="mt-5 text-xs bg-white/20 inline-block px-4 py-1.5 rounded-full backdrop-blur-md border border-white/10 font-medium text-white shadow-sm">
+                        <p className="mt-5 text-xs bg-white/15 inline-block px-5 py-2 rounded-full border border-white/10 font-bold text-white/90 tracking-wide">
                             今日已記錄 {todaysExpenses.length} 筆
                         </p>
                     </div>
                 </div>
             </div>
 
-            {/* 1.2 快速動作 */}
+            {/* 1.2 快速動作 - UZUZ pill buttons */}
             <div className="grid grid-cols-2 gap-4">
                 <Link
                     to="/capture"
-                    className="flex flex-col items-center justify-center gap-3 bg-white p-6 rounded-[24px] active:scale-95 transition-all border border-gray-100 shadow-soft group"
+                    className="flex flex-col items-center justify-center gap-3 bg-white p-7 rounded-[28px] active:scale-95 transition-all shadow-soft group"
                 >
-                    <div className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/40 ring-4 ring-white transition-transform group-hover:scale-110">
-                        <Camera size={28} />
+                    <div className="w-14 h-14 bg-accent text-white rounded-full flex items-center justify-center shadow-lg shadow-accent/30 transition-transform group-hover:scale-110">
+                        <Camera size={26} />
                     </div>
-                    <span className="font-bold text-text mt-1">拍收據</span>
+                    <span className="font-bold text-text text-sm">拍收據</span>
                 </Link>
 
                 <Link
                     to={activeTrip ? `/trips/${activeTrip.id}/add-expense` : "/trips"}
-                    className="flex flex-col items-center justify-center gap-3 bg-white p-6 rounded-[24px] active:scale-95 transition-all border border-gray-100 shadow-soft group"
+                    className="flex flex-col items-center justify-center gap-3 bg-white p-7 rounded-[28px] active:scale-95 transition-all shadow-soft group"
                 >
-                    <div className="w-14 h-14 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-lg shadow-black/10 ring-4 ring-white transition-transform group-hover:scale-110">
-                        <PenLine size={28} />
+                    <div className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg transition-transform group-hover:scale-110">
+                        <PenLine size={26} />
                     </div>
-                    <span className="font-bold text-text mt-1">手動記帳</span>
+                    <span className="font-bold text-text text-sm">手動記帳</span>
                 </Link>
             </div>
 
@@ -190,16 +190,15 @@ export function TodayPage() {
             <div>
                 <div className="flex justify-between items-end mb-4 px-1">
                     <h2 className="text-xl font-heading font-bold text-text">最近記錄</h2>
-                    <Link to="/stats" className="text-sm text-primary font-medium hover:text-primary-dark transition-colors">查看更多</Link>
+                    <Link to="/stats" className="text-sm text-accent font-bold hover:text-accent/80 transition-colors">查看更多</Link>
                 </div>
 
                 {recentExpenses.length > 0 ? (
                     <div className="space-y-3">
                         {recentExpenses.map(expense => (
-                            <div key={expense.id} className="bg-white p-4 rounded-[20px] flex items-center justify-between border border-gray-200">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-2xl border border-gray-100">
-                                        {/* Simple mapping for icon/emoji based on category */}
+                            <div key={expense.id} className="bg-white p-5 rounded-[24px] flex items-center justify-between shadow-soft">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-11 h-11 rounded-full bg-primary-light flex items-center justify-center text-xl">
                                         {expense.category === 'food' ? '🍜' :
                                             expense.category === 'transport' ? '🚌' :
                                                 expense.category === 'accommodation' ? '🏨' :
@@ -207,21 +206,26 @@ export function TodayPage() {
                                     </div>
                                     <div>
                                         <p className="font-bold text-text text-sm">{expense.merchant}</p>
-                                        <p className="text-xs text-text-secondary">{format(new Date(expense.date), 'MM/dd HH:mm')}</p>
+                                        <div className="flex flex-col gap-0.5">
+                                            <p className="text-xs text-text-secondary">{format(new Date(expense.date), 'MM/dd HH:mm')}</p>
+                                            {expense.note && (
+                                                <p className="text-[10px] text-text-secondary italic truncate max-w-[120px]">{expense.note}</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                                <span className="font-heading font-bold text-text">
+                                <span className="font-heading font-black text-text">
                                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency }).format(expense.amount)}
                                 </span>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-10 text-center bg-white rounded-[20px] border border-dashed border-gray-200">
+                    <div className="flex flex-col items-center justify-center py-12 text-center bg-white rounded-[28px] shadow-soft">
                         <div className="w-32 h-32 mb-4 animate-bounce-slow">
                             <img src="/assets/empty_expenses.png" alt="No expenses" className="w-full h-full object-contain opacity-90 mix-blend-multiply" />
                         </div>
-                        <p className="text-text font-bold text-lg">尚無今日消費</p>
+                        <p className="text-text font-black text-lg">尚無今日消費</p>
                         <p className="text-text-secondary text-sm mt-1">享受當下的美好時刻吧！</p>
                     </div>
                 )}

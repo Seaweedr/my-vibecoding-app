@@ -44,7 +44,7 @@ export function SettingsCompanionsPage() {
                         {companions.map((name, index) => (
                             <div key={index} className="flex items-center justify-between p-4 border-b border-gray-50 last:border-0 group">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-accent/20 text-accent-dark flex items-center justify-center font-bold text-lg">
+                                    <div className="w-10 h-10 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold text-lg">
                                         {name[0]}
                                     </div>
                                     <span className="font-bold text-text">{name}</span>
@@ -87,7 +87,7 @@ export function SettingsCompanionsPage() {
                 ) : (
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="w-full py-4 bg-white border-2 border-dashed border-gray-200 text-text-secondary font-bold rounded-[24px] flex items-center justify-center gap-2 hover:border-primary/50 hover:text-primary transition-colors active:scale-95"
+                        className="w-full py-4 bg-white border-2 border-dashed border-gray-200 text-text-secondary font-bold rounded-[24px] flex items-center justify-center gap-2 hover:border-accent/50 hover:text-accent transition-colors active:scale-95"
                     >
                         <Plus size={20} />
                         新增旅伴

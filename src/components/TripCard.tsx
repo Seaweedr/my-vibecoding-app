@@ -27,8 +27,8 @@ export function TripCard({ trip, expenseCount, totalSpend }: TripCardProps) {
 
     return (
         <Link to={`/trips/${trip.id}`} className="block group relative">
-            <div className="bg-white rounded-[20px] border border-gray-200 active:scale-[0.98] transition-all duration-200 overflow-hidden">
-                <div className="h-40 bg-gray-100 relative overflow-hidden">
+            <div className="bg-white rounded-[28px] shadow-soft active:scale-[0.98] transition-all duration-200 overflow-hidden">
+                <div className="h-44 bg-primary-light relative overflow-hidden">
                     {trip.coverImage ? (
                         <img
                             src={trip.coverImage}
@@ -36,12 +36,11 @@ export function TripCard({ trip, expenseCount, totalSpend }: TripCardProps) {
                             className="w-full h-full object-cover"
                         />
                     ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary/5 to-primary/20 flex items-center justify-center relative overflow-hidden">
-                            <div className="absolute inset-0 opacity-10 pattern-dots" />
+                        <div className="w-full h-full bg-gradient-to-br from-primary/5 to-primary/15 flex items-center justify-center relative overflow-hidden">
                             <img
                                 src="/assets/travel_hero.png"
                                 alt="Default Cover"
-                                className="w-32 h-32 object-contain opacity-90 drop-shadow-sm transform group-hover:scale-110 transition-transform duration-500"
+                                className="w-32 h-32 object-contain opacity-80 transform group-hover:scale-110 transition-transform duration-500"
                             />
                         </div>
                     )}
@@ -49,20 +48,20 @@ export function TripCard({ trip, expenseCount, totalSpend }: TripCardProps) {
                     {/* Status Badge */}
                     <div className="absolute top-4 left-4 flex gap-2">
                         {!isPast ? (
-                            <div className="bg-primary text-white px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm tracking-wide">
+                            <div className="bg-accent text-white px-4 py-1.5 rounded-full text-[11px] font-bold shadow-sm tracking-wide">
                                 旅行中
                             </div>
                         ) : (
-                            <div className="bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm tracking-wide">
+                            <div className="bg-primary/80 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-[11px] font-bold shadow-sm tracking-wide">
                                 已結束
                             </div>
                         )}
                     </div>
 
-                    {/* Stats Button - Enhanced Visibility */}
+                    {/* Stats Button */}
                     <button
                         onClick={handleStatsClick}
-                        className="absolute top-4 right-4 bg-white/90 hover:bg-white text-primary p-2 rounded-full transition-colors active:scale-95 shadow-md border border-white/50"
+                        className="absolute top-4 right-4 bg-white/90 hover:bg-white text-accent p-2.5 rounded-full transition-colors active:scale-95 shadow-md"
                         title="統計分析"
                     >
                         <PieChart size={18} />
@@ -70,12 +69,12 @@ export function TripCard({ trip, expenseCount, totalSpend }: TripCardProps) {
                 </div>
 
                 {/* Content Section */}
-                <div className="p-5">
+                <div className="p-6">
                     <div className="mb-3">
                         <div className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-0.5">
                             {trip.country || "全球"}
                         </div>
-                        <h3 className="font-heading font-bold text-xl text-text leading-tight line-clamp-1">
+                        <h3 className="font-heading font-black text-xl text-text leading-tight line-clamp-1">
                             {trip.name}
                         </h3>
                     </div>
@@ -129,7 +128,7 @@ export function TripCard({ trip, expenseCount, totalSpend }: TripCardProps) {
                                         {/* Secondary Amount & Rate (Right) */}
                                         {secondaryCurrency && secondaryAmount !== null && (
                                             <div className="flex flex-col items-end">
-                                                <p className="text-sm font-bold text-primary">
+                                                <p className="text-sm font-bold text-accent">
                                                     ≈ {formatCurrency(secondaryAmount, secondaryCurrency)}
                                                 </p>
                                                 <p className="text-[10px] text-text-secondary opacity-60">

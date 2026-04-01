@@ -159,7 +159,7 @@ export function TripStoryPage() {
             <div className="relative flex-1 z-10 flex flex-col justify-end p-8 pb-32">
                 {scene.type === 'intro' && (
                     <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary text-white rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent text-white rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
                             <Sparkles size={12} />
                             Let's Rewind
                         </div>
@@ -168,11 +168,11 @@ export function TripStoryPage() {
                         </h1>
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-2 text-white/80 font-medium">
-                                <MapPin size={16} className="text-primary" />
+                                <MapPin size={16} className="text-accent" />
                                 {scene.subtitle}
                             </div>
                             <div className="flex items-center gap-2 text-white/80 font-medium">
-                                <Calendar size={16} className="text-primary" />
+                                <Calendar size={16} className="text-accent" />
                                 {scene.date}
                             </div>
                         </div>
@@ -196,7 +196,7 @@ export function TripStoryPage() {
                             </div>
 
                             <div className="flex items-baseline gap-1">
-                                <span className="text-4xl font-black text-primary drop-shadow-md">
+                                <span className="text-4xl font-black text-accent drop-shadow-md">
                                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: scene.currency }).format(scene.amount)}
                                 </span>
                             </div>

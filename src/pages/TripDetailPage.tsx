@@ -92,7 +92,7 @@ export function TripDetailPage() {
         <>
             <div className="min-h-screen bg-bg pb-safe">
                 {/* Full Screen Banner Area (Fixed Background) */}
-                <div className={`fixed top-0 left-0 w-full h-[50vh] z-0 ${hasCover ? 'bg-gray-900' : 'bg-[#0E4F32]'}`}>
+                <div className={`fixed top-0 left-0 w-full h-[50vh] z-0 ${hasCover ? 'bg-gray-900' : 'bg-primary-dark'}`}>
                     {hasCover ? (
                         <>
                             <img
@@ -104,7 +104,7 @@ export function TripDetailPage() {
                             <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
                         </>
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1A8C56] to-[#0D4428] relative overflow-hidden">
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-primary-dark relative overflow-hidden">
                             <div className="absolute inset-0 bg-black/10" />
                             <img
                                 src="/assets/travel_hero.png"
@@ -185,36 +185,36 @@ export function TripDetailPage() {
                             onClick={() => setActiveTab('overview')}
                             className={cn(
                                 "flex-1 py-4 text-sm font-medium transition-colors relative text-center",
-                                activeTab === 'overview' ? "text-primary font-bold" : "text-text-secondary"
+                                activeTab === 'overview' ? "text-accent font-bold" : "text-text-secondary"
                             )}
                         >
                             總覽
                             {activeTab === 'overview' && (
-                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full mx-10" />
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-t-full mx-10" />
                             )}
                         </button>
                         <button
                             onClick={() => setActiveTab('timeline')}
                             className={cn(
                                 "flex-1 py-4 text-sm font-medium transition-colors relative text-center",
-                                activeTab === 'timeline' ? "text-primary font-bold" : "text-text-secondary"
+                                activeTab === 'timeline' ? "text-accent font-bold" : "text-text-secondary"
                             )}
                         >
                             時光軸
                             {activeTab === 'timeline' && (
-                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full mx-10" />
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-t-full mx-10" />
                             )}
                         </button>
                         <button
                             onClick={() => setActiveTab('balances')}
                             className={cn(
                                 "flex-1 py-4 text-sm font-medium transition-colors relative text-center",
-                                activeTab === 'balances' ? "text-primary font-bold" : "text-text-secondary"
+                                activeTab === 'balances' ? "text-accent font-bold" : "text-text-secondary"
                             )}
                         >
                             結算
                             {activeTab === 'balances' && (
-                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full mx-10" />
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-t-full mx-10" />
                             )}
                         </button>
                     </div>
@@ -332,6 +332,11 @@ export function TripDetailPage() {
                                                                             </span>
                                                                             {expense.items && expense.items.length > 0 && <span>{expense.items.length} items</span>}
                                                                         </div>
+                                                                        {expense.note && (
+                                                                            <div className="text-[11px] text-text-secondary mt-1 bg-gray-50 px-2 py-1 rounded inline-block italic">
+                                                                                {expense.note}
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </div>
 
@@ -367,7 +372,7 @@ export function TripDetailPage() {
                         ) : activeTab === 'timeline' ? (
                             <div className="space-y-4">
                                 <div className="bg-surface rounded-[24px] p-6 text-center shadow-sm">
-                                    <Clock size={40} className="mx-auto text-primary mb-2" />
+                                    <Clock size={40} className="mx-auto text-accent mb-2" />
                                     <h3 className="font-bold text-text">時光軸功能</h3>
                                     <p className="text-sm text-text-secondary mt-2">將您的收據與照片結合成時間軸故事。</p>
                                 </div>
@@ -416,23 +421,23 @@ export function TripDetailPage() {
                                             <section className="space-y-4">
                                                 <div className="flex items-center justify-between">
                                                     <h3 className="font-heading font-black text-xl text-text">還款建議</h3>
-                                                    <div className="bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded-full tracking-wider">Optimized</div>
+                                                    <div className="bg-primary/10 text-accent text-[10px] font-black px-2 py-0.5 rounded-full tracking-wider">Optimized</div>
                                                 </div>
 
                                                 {settlementSuggestions.length > 0 ? (
                                                     <div className="space-y-3">
                                                         {settlementSuggestions.map((s, idx) => (
                                                             <div key={idx} className="flex items-center gap-4 bg-white p-4 rounded-[24px] border border-gray-100 shadow-sm relative overflow-hidden group">
-                                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/20" />
+                                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent/20" />
                                                                 <div className="flex-1 text-center">
                                                                     <div className="text-[10px] font-black text-gray-400 uppercase mb-1">From</div>
                                                                     <div className="font-bold text-text truncate">{s.fromName}</div>
                                                                 </div>
                                                                 <div className="flex flex-col items-center gap-1 shrink-0">
-                                                                    <div className="font-black text-primary text-sm whitespace-nowrap">
+                                                                    <div className="font-black text-accent text-sm whitespace-nowrap">
                                                                         {new Intl.NumberFormat('en-US', { style: 'currency', currency: trip.currency }).format(s.amount)}
                                                                     </div>
-                                                                    <ArrowLeft className="rotate-180 text-primary animate-pulse" size={20} />
+                                                                    <ArrowLeft className="rotate-180 text-accent animate-pulse" size={20} />
                                                                 </div>
                                                                 <div className="flex-1 text-center">
                                                                     <div className="text-[10px] font-black text-gray-400 uppercase mb-1">To</div>
@@ -449,7 +454,7 @@ export function TripDetailPage() {
                                                     </div>
                                                 )}
 
-                                                <button className="w-full py-4 bg-gray-50 border border-dashed border-gray-300 rounded-[20px] text-xs font-black text-gray-400 hover:border-primary hover:text-primary transition-all active:scale-95 flex items-center justify-center gap-2 mt-4">
+                                                <button className="w-full py-4 bg-gray-50 border border-dashed border-gray-300 rounded-[20px] text-xs font-black text-gray-400 hover:border-accent hover:text-accent transition-all active:scale-95 flex items-center justify-center gap-2 mt-4">
                                                     <Share2 size={14} />
                                                     複製結算明細分享至 LINE
                                                 </button>
@@ -465,7 +470,7 @@ export function TripDetailPage() {
                 {/* Floating Action Button */}
                 <Link
                     to={`/trips/${tripId}/add-expense`}
-                    className="fixed bottom-24 right-6 w-16 h-16 bg-primary text-white rounded-full shadow-lg shadow-primary/40 flex items-center justify-center active:scale-90 transition-transform z-50 hover:bg-primary-dark"
+                    className="fixed bottom-24 right-6 w-16 h-16 bg-accent text-white rounded-full shadow-deep flex items-center justify-center active:scale-90 transition-transform z-50 hover:brightness-110"
                     style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
                 >
                     <Plus size={36} />
@@ -659,7 +664,7 @@ export function TripDetailPage() {
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
                                         <label className="text-xs font-bold text-text-secondary">常用旅伴 (快速加入)</label>
-                                        <Link to="/settings/companions" className="text-xs text-primary font-bold">管理名單</Link>
+                                        <Link to="/settings/companions" className="text-xs text-accent font-bold">管理名單</Link>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
                                         {settings.frequentCompanions && settings.frequentCompanions.length > 0 ? (
@@ -671,7 +676,7 @@ export function TripDetailPage() {
                                                     <button
                                                         key={name}
                                                         onClick={() => addCompanion(trip.id, name)}
-                                                        className="px-3 py-2 bg-white border border-dashed border-gray-300 text-text rounded-xl text-sm font-medium hover:border-primary hover:text-primary transition-all active:scale-95 flex items-center gap-1"
+                                                        className="px-3 py-2 bg-white border border-dashed border-gray-300 text-text rounded-xl text-sm font-medium hover:border-accent hover:text-accent transition-all active:scale-95 flex items-center gap-1"
                                                     >
                                                         <Plus size={14} />
                                                         {name}
@@ -687,9 +692,9 @@ export function TripDetailPage() {
                                     </div>
                                 </div>
 
-                                <div className="bg-primary/5 rounded-[24px] p-4 text-center space-y-3 border border-primary/10 mt-2">
+                                <div className="bg-accent/5 rounded-[24px] p-4 text-center space-y-3 border border-accent/10 mt-2">
                                     <div>
-                                        <h3 className="font-bold text-primary text-sm">邀請連結</h3>
+                                        <h3 className="font-bold text-accent text-sm">邀請連結</h3>
                                         <p className="text-[10px] text-text-secondary mt-0.5">
                                             分享連結，邀請朋友一起編輯
                                         </p>
@@ -699,7 +704,7 @@ export function TripDetailPage() {
                                             <Copy size={14} />
                                             複製
                                         </button>
-                                        <button className="flex-1 py-2.5 bg-primary text-white rounded-[12px] text-xs font-bold shadow-md shadow-primary/20 hover:bg-primary-dark active:scale-95 transition-transform flex items-center justify-center gap-2">
+                                        <button className="flex-1 py-2.5 bg-primary text-white rounded-[12px] text-xs font-bold shadow-md shadow-accent/20 hover:brightness-110 active:scale-95 transition-transform flex items-center justify-center gap-2">
                                             <Share2 size={14} />
                                             分享
                                         </button>

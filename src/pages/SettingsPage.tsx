@@ -46,12 +46,12 @@ export function SettingsPage() {
             </header>
 
             {/* Profile Section */}
-            <div className="bg-white rounded-[20px] p-6 border border-gray-200 transition-all duration-300">
+            <div className="bg-white rounded-[20px] p-6 shadow-soft transition-all duration-300">
                 <div className="flex justify-between items-start mb-2">
                     <h2 className="text-lg font-bold text-text-secondary">基本資料</h2>
                     <button
                         onClick={toggleEdit}
-                        className="w-10 h-10 -mr-2 -mt-2 rounded-full hover:bg-gray-50 flex items-center justify-center text-primary transition-colors"
+                        className="w-10 h-10 -mr-2 -mt-2 rounded-full hover:bg-gray-50 flex items-center justify-center text-accent transition-colors"
                     >
                         {isEditing ? <Check size={24} /> : <Edit2 size={20} />}
                     </button>
@@ -60,7 +60,7 @@ export function SettingsPage() {
                 <div className="flex flex-col items-center gap-6">
                     {/* Avatar Section */}
                     <div className="relative group">
-                        <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-5xl overflow-hidden border-4 border-white shadow-soft">
+                        <div className="w-24 h-24 rounded-full bg-accent/10 flex items-center justify-center text-5xl overflow-hidden border-4 border-white shadow-soft">
                             {customAvatar ? (
                                 <img src={customAvatar} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
@@ -84,7 +84,7 @@ export function SettingsPage() {
                                     <button
                                         key={emoji}
                                         onClick={() => { setAvatar(emoji); setCustomAvatar(null); }}
-                                        className={`w-10 h-10 rounded-full flex items-center justify-center text-xl transition-transform hover:scale-110 ${avatar === emoji && !customAvatar ? 'bg-primary/20 ring-2 ring-primary' : 'bg-gray-50'}`}
+                                        className={`w-10 h-10 rounded-full flex items-center justify-center text-xl transition-transform hover:scale-110 ${avatar === emoji && !customAvatar ? 'bg-accent/20 ring-2 ring-accent' : 'bg-gray-50'}`}
                                     >
                                         {emoji}
                                     </button>
@@ -96,7 +96,7 @@ export function SettingsPage() {
                                 <input
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="w-full p-4 bg-gray-50 rounded-[16px] font-bold text-text outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                    className="w-full p-4 bg-gray-50 rounded-[16px] font-bold text-text outline-none focus:ring-2 focus:ring-accent/20 transition-all"
                                     placeholder="輸入您的暱稱"
                                 />
                             </div>
@@ -107,7 +107,7 @@ export function SettingsPage() {
                                     <select
                                         value={currency}
                                         onChange={(e) => setCurrency(e.target.value as any)}
-                                        className="w-full p-4 bg-gray-50 rounded-[16px] font-medium text-text outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
+                                        className="w-full p-4 bg-gray-50 rounded-[16px] font-medium text-text outline-none focus:ring-2 focus:ring-accent/20 transition-all appearance-none"
                                     >
                                         <option value="TWD">TWD - 新台幣</option>
                                         <option value="USD">USD - 美金</option>
@@ -134,7 +134,7 @@ export function SettingsPage() {
             <div className="space-y-4">
                 <section>
                     <h3 className="px-2 mb-2 text-xs font-bold text-text-secondary uppercase tracking-wider">一般設定</h3>
-                    <div className="bg-white rounded-[20px] overflow-hidden border border-gray-200">
+                    <div className="bg-white rounded-[20px] overflow-hidden shadow-soft">
                         <Link to="/settings/language">
                             <SettingItem icon={Globe} label="語言" value={settings.language === 'en' ? 'English' : settings.language === 'ja' ? '日本語' : '繁體中文'} />
                         </Link>
@@ -149,7 +149,7 @@ export function SettingsPage() {
 
                 <section>
                     <h3 className="px-2 mb-2 text-xs font-bold text-text-secondary uppercase tracking-wider">分帳</h3>
-                    <div className="bg-white rounded-[20px] overflow-hidden border border-gray-200">
+                    <div className="bg-white rounded-[20px] overflow-hidden shadow-soft">
                         <Link to="/settings/companions">
                             <SettingItem icon={User} label="常用旅伴" value={settings.frequentCompanions?.length ? `${settings.frequentCompanions.length} 位` : undefined} />
                         </Link>
@@ -158,7 +158,7 @@ export function SettingsPage() {
 
                 <section>
                     <h3 className="px-2 mb-2 text-xs font-bold text-text-secondary uppercase tracking-wider">關於 Nori</h3>
-                    <div className="bg-white rounded-[20px] overflow-hidden border border-gray-200">
+                    <div className="bg-white rounded-[20px] overflow-hidden shadow-soft">
                         <SettingItem icon={HelpCircle} label="意見回饋" />
                         <SettingItem icon={Shield} label="隱私權政策" />
                         <div className="p-4 flex justify-between items-center text-sm font-medium text-text-secondary bg-gray-50/50">

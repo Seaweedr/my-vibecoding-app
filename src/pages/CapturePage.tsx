@@ -190,7 +190,7 @@ export function CapturePage() {
                         <p>{error}</p>
                         <button
                             onClick={() => setError(null)}
-                            className="mt-4 px-4 py-2 bg-primary text-white rounded-lg pointer-events-auto"
+                            className="mt-4 px-5 py-2.5 bg-accent text-white rounded-full pointer-events-auto font-bold"
                         >
                             重試
                         </button>
@@ -206,7 +206,7 @@ export function CapturePage() {
                         <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-white -mb-1 -mr-1"></div>
 
                         {isScanning && (
-                            <div className="absolute top-0 left-0 right-0 h-1 bg-primary shadow-[0_0_15px_#5C9DF2] animate-[scan_1.5s_infinite_linear]"></div>
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-accent shadow-[0_0_15px_#ff6900] animate-[scan_1.5s_infinite_linear]"></div>
                         )}
                     </div>
                 )}
@@ -231,7 +231,7 @@ export function CapturePage() {
                     disabled={!!error || isScanning}
                     className="relative active:scale-95 transition-transform disabled:opacity-50 group"
                 >
-                    <div className="w-20 h-20 bg-primary text-white rounded-full flex items-center justify-center shadow-xl shadow-primary/40 ring-4 ring-white/20 transition-all group-hover:scale-105 group-active:scale-90">
+                    <div className="w-20 h-20 bg-accent text-white rounded-full flex items-center justify-center shadow-deep ring-4 ring-white/20 transition-all group-hover:scale-105 group-active:scale-90">
                         {isScanning ? (
                             <Loader2 size={36} className="text-white animate-spin" />
                         ) : (

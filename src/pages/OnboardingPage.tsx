@@ -42,7 +42,7 @@ export function OnboardingPage() {
                 <h1 className="text-4xl font-heading font-extrabold text-gray-900 mb-6">
                     {steps[step].title}
                 </h1>
-                <p className="text-gray-500 text-xl leading-relaxed max-w-xs">
+                <p className="text-gray-500 text-lg leading-relaxed px-4">
                     {steps[step].desc}
                 </p>
 
@@ -51,7 +51,7 @@ export function OnboardingPage() {
                     {steps.map((_, i) => (
                         <div
                             key={i}
-                            className={`h-2 rounded-full transition-all duration-300 ${i === step ? 'bg-primary w-8' : 'bg-gray-200 w-2'}`}
+                            className={`h-2 rounded-full transition-all duration-300 ${i === step ? 'bg-accent w-8' : 'bg-gray-200 w-2'}`}
                         />
                     ))}
                 </div>
@@ -72,7 +72,7 @@ export function OnboardingPage() {
             <div className="w-full mb-8">
                 <button
                     onClick={handleNext}
-                    className="w-full py-4 bg-primary text-white font-bold rounded-[20px] shadow-xl shadow-primary/20 active:scale-95 transition-transform flex items-center justify-center gap-2 text-lg"
+                    className="w-full py-4 bg-primary text-white font-bold rounded-full shadow-deep active:scale-95 transition-transform flex items-center justify-center gap-2 text-lg"
                 >
                     {step === steps.length - 1 ? '開始使用' : '下一步'}
                     {step === steps.length - 1 ? <Check size={24} /> : <ArrowRight size={24} />}
