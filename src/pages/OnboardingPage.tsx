@@ -36,7 +36,7 @@ export function OnboardingPage() {
     };
 
     return (
-        <div className="h-screen bg-white flex flex-col items-center justify-between p-8 relative overflow-hidden">
+        <div className="h-screen bg-white flex flex-col items-center justify-between p-8 pt-safe relative overflow-hidden">
             {/* Text Content (Top) */}
             <div className="w-full flex flex-col items-center text-center mt-12 animate-slide-down">
                 <h1 className="text-4xl font-heading font-extrabold text-gray-900 mb-6">

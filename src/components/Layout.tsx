@@ -15,7 +15,7 @@ export function Layout() {
 
     return (
         <div className="max-w-md mx-auto min-h-screen bg-bg relative overflow-hidden flex flex-col">
-            <main className="flex-1 pb-20 page-enter">
+            <main className="flex-1 pb-20 pt-safe page-enter">
                 <Outlet />
             </main>
             <BottomNav />
